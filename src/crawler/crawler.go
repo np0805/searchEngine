@@ -12,7 +12,8 @@ import (
 
 // Crawler struct
 type Crawler struct {
-	url string
+	url         string
+	childrenURL []string
 }
 
 // GetURL return url of crawler
@@ -36,11 +37,11 @@ func (crawler *Crawler) GetTitle() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	rows := make([]string, 0)
+	// rows := make([]string, 0)
 
 	title := doc.Find("title").Text()
-	rows = append(rows, title)
-	fmt.Println(rows)
+	// rows = append(rows, title)
+	fmt.Println(title)
 }
 
 // getHref get the href attribute from the token
@@ -97,9 +98,9 @@ func getLinks(url string, ch chan string, chFinished chan bool) {
 			}
 
 			// Make sure the url begines in http**
-			hasProto := strings.Index(url, "#") == 0
+			hasProto := strings.Index(url, "http") == 0
 			startSlash := strings.Index(url, "/") == 0
-			if !hasProto {
+			if hasProto || startSlash {
 				if startSlash {
 					url = baseURL + url
 					ch <- url
@@ -112,7 +113,7 @@ func getLinks(url string, ch chan string, chFinished chan bool) {
 }
 
 // ExtractLinks get the links from the url
-func (crawler *Crawler) ExtractLinks() {
+func (crawler *Crawler) ExtractLinks(childrenURL *[]string) {
 	foundUrls := make(map[string]bool)
 	// seedUrls := os.Args[1:]
 
@@ -138,13 +139,29 @@ func (crawler *Crawler) ExtractLinks() {
 
 	// We're done! Print the results...
 
-	fmt.Println("\nFound", len(foundUrls), "unique urls in : ", crawler.GetURL(), "\n")
-
+	fmt.Println("Found", len(foundUrls), "unique urls in : ", crawler.GetURL())
+	i := 0
 	for url := range foundUrls {
+		i++
+		*childrenURL = append(*childrenURL, url)
 		fmt.Println(" - " + url)
+		if i == 5 {
+			break
+		}
 	}
 
 	close(chUrls)
+}
+
+// ExtractAllLinks including the child links from the baseurl children
+func (crawler *Crawler) ExtractAllLinks() {
+	crawler.ExtractLinks(&crawler.childrenURL)
+	for _, url := range crawler.childrenURL {
+		childCrawler := Crawler{url, make([]string, 0)}
+		fmt.Println("--------------------------------------------")
+		childCrawler.GetTitle()
+		childCrawler.ExtractLinks(&childCrawler.childrenURL)
+	}
 }
 
 // ExtractWords extract words from a given link
@@ -156,7 +173,7 @@ func (crawler *Crawler) ExtractWords() []string {
 
 func main() {
 	const baseURL = "https://www.cse.ust.hk/"
-	crawler := Crawler{baseURL}
+	crawler := Crawler{baseURL, make([]string, 0)}
 	crawler.GetTitle()
-	crawler.ExtractLinks()
+	crawler.ExtractAllLinks()
 }

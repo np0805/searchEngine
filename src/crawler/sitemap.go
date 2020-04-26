@@ -14,7 +14,7 @@ func main() {
 	c := colly.NewCollector(colly.AllowedDomains("www.shopify.com"))
 
 	// Create a callback on the XPath query searching for the URLs
-	c.OnXML("//urlset/url/loc", func(e *colly.XMLElement) {
+	c.OnXML("//urlset/url/lastmod", func(e *colly.XMLElement) {
 		knownUrls = append(knownUrls, e.Text)
 	})
 
