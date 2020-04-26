@@ -4,26 +4,66 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
 )
 
-// Crawler struct
-type Crawler struct {
+// Page struct
+type Page struct {
 	url         string
+	title       string
+	keywords    []string
 	childrenURL []string
 }
 
 // GetURL return url of crawler
-func (crawler *Crawler) GetURL() string {
-	return crawler.url
+func (page *Page) GetURL() string {
+	return page.url
 }
 
-// GetTitle from each url
-func (crawler *Crawler) GetTitle() {
-	res, err := http.Get(crawler.GetURL())
+// GetTitle return list of keywords
+func (page *Page) GetTitle() string {
+	return page.title
+}
+
+// GetKeywords return list of keywords
+func (page *Page) GetKeywords() []string {
+	return page.keywords
+}
+
+// GetChildrenURL return list of keywords
+func (page *Page) GetChildrenURL() []string {
+	return page.childrenURL
+}
+
+// ExtractTitle from each url
+func (page *Page) ExtractTitle() string {
+	res, err := http.Get(page.GetURL())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		// log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+	}
+	// Load the HTML document
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// rows := make([]string, 0)
+
+	page.title = doc.Find("title").Text()
+	// rows = append(rows, title)
+	return page.title
+}
+
+// ExtractWords from each url
+func (page *Page) ExtractWords() {
+	res, err := http.Get(page.GetURL())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,11 +77,13 @@ func (crawler *Crawler) GetTitle() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// rows := make([]string, 0)
 
-	title := doc.Find("title").Text()
-	// rows = append(rows, title)
-	fmt.Println(title)
+	bodytext := doc.Find("body").Text()
+	text := strings.Fields(bodytext)
+	for _, keyword := range text {
+		page.keywords = append(page.keywords, keyword)
+	}
+
 }
 
 // getHref get the href attribute from the token
@@ -113,19 +155,15 @@ func getLinks(url string, ch chan string, chFinished chan bool) {
 }
 
 // ExtractLinks get the links from the url
-func (crawler *Crawler) ExtractLinks(childrenURL *[]string) {
+func (page *Page) ExtractLinks() {
 	foundUrls := make(map[string]bool)
-	// seedUrls := os.Args[1:]
 
 	// Channels
 	chUrls := make(chan string)
 	chFinished := make(chan bool)
 
 	// Kick off the crawl process (concurrently)
-	// for _, url := range seedUrls {
-	// 	go crawl(crawler.GetURL(), chUrls, chFinished)
-	// }
-	go getLinks(crawler.GetURL(), chUrls, chFinished)
+	go getLinks(page.GetURL(), chUrls, chFinished)
 
 	// Subscribe to both channels
 	for c := 0; c < 1; {
@@ -138,42 +176,63 @@ func (crawler *Crawler) ExtractLinks(childrenURL *[]string) {
 	}
 
 	// We're done! Print the results...
-
-	fmt.Println("Found", len(foundUrls), "unique urls in : ", crawler.GetURL())
-	i := 0
+	// i := 0
 	for url := range foundUrls {
-		i++
-		*childrenURL = append(*childrenURL, url)
-		fmt.Println(" - " + url)
-		if i == 5 {
-			break
-		}
+		page.childrenURL = append(page.childrenURL, url)
+		// if i == 29 {
+		// 	break
+		// }
+		// i++
 	}
 
 	close(chUrls)
 }
 
-// ExtractAllLinks including the child links from the baseurl children
-func (crawler *Crawler) ExtractAllLinks() {
-	crawler.ExtractLinks(&crawler.childrenURL)
-	for _, url := range crawler.childrenURL {
-		childCrawler := Crawler{url, make([]string, 0)}
-		fmt.Println("--------------------------------------------")
-		childCrawler.GetTitle()
-		childCrawler.ExtractLinks(&childCrawler.childrenURL)
-	}
+// ExtractAll extract all words, keywords, title, etc from a given url and its immediate children
+func (page *Page) ExtractAll() {
+	page.ExtractTitle()
+	page.ExtractWords()
+	page.ExtractLinks()
 }
 
-// ExtractWords extract words from a given link
-func (crawler *Crawler) ExtractWords() []string {
-	words := make([]string, 0)
-	words = append(words, crawler.GetURL())
-	return words
+// WriteIndexed write the result of extraction into a file.txt
+func (page *Page) WriteIndexed() {
+	page.ExtractAll()
+	f, err := os.Create("spider_result.txt")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	head := page.GetTitle() + "\n" + page.GetURL() + "\n" + strings.Join(page.GetKeywords(), " ") + "\n" + strings.Join(page.GetChildrenURL(), "\n") + "\n"
+
+	for _, url := range page.GetChildrenURL() {
+		childPage := Page{url, "", make([]string, 0), make([]string, 0)}
+		childPage.ExtractAll()
+		// fmt.Println(childPage.GetTitle())
+		if childPage.GetTitle() != "" {
+			children := "---------------------------------------\n" + childPage.GetTitle() + "\n" + childPage.GetURL() + "\n" + strings.Join(childPage.GetKeywords(), " ") + "\n" + strings.Join(childPage.GetChildrenURL(), "\n") + "\n"
+			head += children
+		}
+	}
+
+	l, err := f.WriteString(head)
+	if err != nil {
+		fmt.Println(err)
+		f.Close()
+		return
+	}
+
+	fmt.Println(l, "bytes written successfully")
+	err = f.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 func main() {
 	const baseURL = "https://www.cse.ust.hk/"
-	crawler := Crawler{baseURL, make([]string, 0)}
-	crawler.GetTitle()
-	crawler.ExtractAllLinks()
+	page := Page{baseURL, "", make([]string, 0), make([]string, 0)}
+	page.WriteIndexed()
 }
