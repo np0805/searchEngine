@@ -59,7 +59,7 @@ func (page *Page) ExtractTitle() {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		// log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+		// log.Fatalf("status code error title: %d %s, %s", res.StatusCode, res.Status, page.GetURL())
 	}
 	// Load the HTML document
 	doc, err := goquery.NewDocumentFromReader(res.Body)
@@ -74,6 +74,10 @@ func (page *Page) ExtractLastModified() {
 	res, err := http.Head(page.GetURL())
 	if err != nil {
 		log.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		// log.Fatalf("status code error title: %d %s, %s", res.StatusCode, res.Status, page.GetURL())
 	}
 	if res.Header.Get("Date") != "" {
 		if res.Header.Get("Last-Modified") != "" {
@@ -92,6 +96,10 @@ func (page *Page) ExtractSize() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		// log.Fatalf("status code error title: %d %s, %s", res.StatusCode, res.Status, page.GetURL())
+	}
 	if res.Header.Get("Content-Length") != "" {
 		page.pageSize = res.Header.Get("Content-Length")
 	} else {
@@ -107,7 +115,7 @@ func (page *Page) ExtractWords() {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+		// log.Fatalf("status code error keywords: %d %s, %s", res.StatusCode, res.Status, page.GetURL())
 	}
 
 	// Load the HTML document
@@ -117,6 +125,9 @@ func (page *Page) ExtractWords() {
 	}
 
 	bodytext := doc.Find("body").Text()
+	if doc.Find("main").Text() != "" {
+		bodytext = doc.Find("main").Text()
+	}
 	text := strings.Fields(bodytext)
 	for _, keyword := range text {
 		page.keywords = append(page.keywords, keyword)
@@ -240,7 +251,7 @@ func (page *Page) WriteIndexed() {
 		return
 	}
 
-	head := page.GetTitle() + "\n" + page.GetURL() + "\n" + page.GetLastModified() + ", " + page.GetSize() + "\n" + strings.Join(page.GetKeywords(), " ") + "\n" + strings.Join(page.GetChildrenURL(), "\n") + "\n"
+	head := "TITLE: " + page.GetTitle() + "\n" + page.GetURL() + "\n" + "DATE: " + page.GetLastModified() + ", " + page.GetSize() + "\n" + strings.Join(page.GetKeywords(), " ") + "\n" + strings.Join(page.GetChildrenURL(), "\n") + "\n"
 
 	for _, url := range page.GetChildrenURL() {
 		childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0)}
@@ -249,21 +260,20 @@ func (page *Page) WriteIndexed() {
 		childPage.ExtractSize()
 		childPage.ExtractWords()
 		childPage.ExtractLinks()
-		// fmt.Println(childPage.GetTitle())
 		if childPage.GetTitle() != "" {
-			children := "---------------------------------------\n" + childPage.GetTitle() + "\n" + childPage.GetURL() + "\n" + childPage.GetLastModified() + ", " + childPage.GetSize() + "\n" + strings.Join(childPage.GetKeywords(), " ") + "\n" + strings.Join(childPage.GetChildrenURL(), "\n") + "\n"
+			children := "----------------------------------------------\n" + "TITLE: " + childPage.GetTitle() + "\n" + childPage.GetURL() + "\n" + "DATE: " + childPage.GetLastModified() + ", " + childPage.GetSize() + "\n" + strings.Join(childPage.GetKeywords(), " ") + "\n" + strings.Join(childPage.GetChildrenURL(), "\n") + "\n"
 			head += children
 		}
 	}
 
-	l, err := f.WriteString(head)
+	_, err = f.WriteString(head)
 	if err != nil {
 		fmt.Println(err)
 		f.Close()
 		return
 	}
 
-	fmt.Println(l, "bytes written successfully")
+	// fmt.Println(l, "bytes written successfully")
 	err = f.Close()
 	if err != nil {
 		fmt.Println(err)
@@ -281,9 +291,14 @@ func main() {
 // https://www.techinasia.com/top-funded-startups-tech-companies-india?ref=subexc-444416
 
 /*
-	res, err := http.Head("https://www.bloomberg.com/markets")
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(res.Header)
+	// res, err := http.Get("https://www.cse.ust.hk/")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// robots, err := ioutil.ReadAll(res.Body)
+	// res.Body.Close()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// fmt.Printf("%s", robots)
 */
