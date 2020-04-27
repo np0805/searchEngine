@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"bytes"
 	"io/ioutil"
 	"path/filepath"
 	"regexp"
@@ -36,7 +36,6 @@ func CheckStopWords(s string) bool {
 	if stopWordsBool == nil {
 		InputStopWords()
 	}
-	fmt.Println(stopWordsBool[s])
 	return stopWordsBool[s]
 }
 
@@ -48,8 +47,8 @@ func StemThemAll() {
 	if err != nil {
 		panic(err)
 	}
-	result := crawled
-	/* var result []byte
+	//result := crawled
+	var result []byte
 	txtlines := bytes.Split(crawled, []byte("\n"))
 
 	result = append(result, txtlines[1]...)
@@ -57,10 +56,21 @@ func StemThemAll() {
 	for _, lines := range txtlines {
 		txtwords := bytes.Split(lines, []byte(" "))
 		for _, words := range txtwords {
-			result = append(result, words...)
+			//if not an url
+			if !strings.HasPrefix(string(words), "http") {
+				if CheckStopWords(string(words)) {
+					continue
+				} else {
+					words = []byte(string(words) + " ")
+					result = append(result, words...)
+				}
+				//if an url
+			} else {
+				result = append(result, words...)
+			}
 		}
-		result = append(result, '\n')
-	} */
+		//result = append(result, '\n')
+	}
 
 	//write to spider_result_stemmed.txt
 	WritePath, _ := filepath.Abs(writefile)
