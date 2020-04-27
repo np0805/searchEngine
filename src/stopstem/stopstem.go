@@ -82,10 +82,5 @@ func StemThemAll() {
 
 func main() {
 	InputStopWords()
-	CheckStopWords("tralalalala")
-	CheckStopWords("above")
-	CheckStopWords("trililii")
-	CheckStopWords("becomes")
-	CheckStopWords("a")
 	StemThemAll()
 }
