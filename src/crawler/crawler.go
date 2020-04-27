@@ -4,25 +4,104 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
 )
 
-// Crawler struct
-type Crawler struct {
-	url string
+// Page struct
+type Page struct {
+	url          string
+	title        string
+	lastModified string
+	pageSize     string
+	keywords     []string
+	childrenURL  []string
 }
 
-// GetURL return url of crawler
-func (crawler *Crawler) GetURL() string {
-	return crawler.url
+// GetURL return url of page
+func (page *Page) GetURL() string {
+	return page.url
 }
 
-// GetTitle from each url
-func (crawler *Crawler) GetTitle() {
-	res, err := http.Get(crawler.GetURL())
+// GetTitle return title of the page
+func (page *Page) GetTitle() string {
+	return page.title
+}
+
+// GetLastModified return the last modified date of a page
+func (page *Page) GetLastModified() string {
+	return page.lastModified
+}
+
+// GetSize return size of page
+func (page *Page) GetSize() string {
+	return page.pageSize
+}
+
+// GetKeywords return list of keywords
+func (page *Page) GetKeywords() []string {
+	return page.keywords
+}
+
+// GetChildrenURL return list of keywords
+func (page *Page) GetChildrenURL() []string {
+	return page.childrenURL
+}
+
+// ExtractTitle from each url
+func (page *Page) ExtractTitle() {
+	res, err := http.Get(page.GetURL())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer res.Body.Close()
+	if res.StatusCode != 200 {
+		// log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+	}
+	// Load the HTML document
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	page.title = doc.Find("title").Text()
+}
+
+// ExtractLastModified extract the last-modified date from a header of a url, return 0 if not found
+func (page *Page) ExtractLastModified() {
+	res, err := http.Head(page.GetURL())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if res.Header.Get("Date") != "" {
+		if res.Header.Get("Last-Modified") != "" {
+			page.lastModified = res.Header.Get("Last-Modified")
+		} else {
+			page.lastModified = res.Header.Get("Date")
+		}
+	} else {
+		page.lastModified = "0"
+	}
+}
+
+// ExtractSize extract the size of the page if found, -1 if not found
+func (page *Page) ExtractSize() {
+	res, err := http.Head(page.GetURL())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if res.Header.Get("Content-Length") != "" {
+		page.pageSize = res.Header.Get("Content-Length")
+	} else {
+		page.pageSize = "-1"
+	}
+}
+
+// ExtractWords from each url
+func (page *Page) ExtractWords() {
+	res, err := http.Get(page.GetURL())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -36,11 +115,13 @@ func (crawler *Crawler) GetTitle() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	rows := make([]string, 0)
 
-	title := doc.Find("title").Text()
-	rows = append(rows, title)
-	fmt.Println(rows)
+	bodytext := doc.Find("body").Text()
+	text := strings.Fields(bodytext)
+	for _, keyword := range text {
+		page.keywords = append(page.keywords, keyword)
+	}
+
 }
 
 // getHref get the href attribute from the token
@@ -83,7 +164,6 @@ func getLinks(url string, ch chan string, chFinished chan bool) {
 			return
 		case tt == html.StartTagToken:
 			t := z.Token()
-
 			// Check if the token is an <a> tag
 			isAnchor := t.Data == "a"
 			if !isAnchor {
@@ -97,9 +177,9 @@ func getLinks(url string, ch chan string, chFinished chan bool) {
 			}
 
 			// Make sure the url begines in http**
-			hasProto := strings.Index(url, "#") == 0
+			hasProto := strings.Index(url, "http") == 0
 			startSlash := strings.Index(url, "/") == 0
-			if !hasProto {
+			if hasProto || startSlash {
 				if startSlash {
 					url = baseURL + url
 					ch <- url
@@ -112,19 +192,15 @@ func getLinks(url string, ch chan string, chFinished chan bool) {
 }
 
 // ExtractLinks get the links from the url
-func (crawler *Crawler) ExtractLinks() {
+func (page *Page) ExtractLinks() {
 	foundUrls := make(map[string]bool)
-	// seedUrls := os.Args[1:]
 
 	// Channels
 	chUrls := make(chan string)
 	chFinished := make(chan bool)
 
 	// Kick off the crawl process (concurrently)
-	// for _, url := range seedUrls {
-	// 	go crawl(crawler.GetURL(), chUrls, chFinished)
-	// }
-	go getLinks(crawler.GetURL(), chUrls, chFinished)
+	go getLinks(page.GetURL(), chUrls, chFinished)
 
 	// Subscribe to both channels
 	for c := 0; c < 1; {
@@ -137,26 +213,77 @@ func (crawler *Crawler) ExtractLinks() {
 	}
 
 	// We're done! Print the results...
-
-	fmt.Println("\nFound", len(foundUrls), "unique urls in : ", crawler.GetURL(), "\n")
-
 	for url := range foundUrls {
-		fmt.Println(" - " + url)
+		page.childrenURL = append(page.childrenURL, url)
 	}
 
 	close(chUrls)
 }
 
-// ExtractWords extract words from a given link
-func (crawler *Crawler) ExtractWords() []string {
-	words := make([]string, 0)
-	words = append(words, crawler.GetURL())
-	return words
+// // ExtractAll extract all words, keywords, title, etc from a given url and its immediate children
+// func (page *Page) ExtractAll() {
+// 	page.ExtractTitle()
+// 	page.ExtractWords()
+// 	page.ExtractLinks()
+// }
+
+// WriteIndexed write the result of extraction into a file.txt
+func (page *Page) WriteIndexed() {
+	page.ExtractTitle()
+	page.ExtractLastModified()
+	page.ExtractSize()
+	page.ExtractWords()
+	page.ExtractLinks()
+	f, err := os.Create("spider_result.txt")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	head := page.GetTitle() + "\n" + page.GetURL() + "\n" + page.GetLastModified() + ", " + page.GetSize() + "\n" + strings.Join(page.GetKeywords(), " ") + "\n" + strings.Join(page.GetChildrenURL(), "\n") + "\n"
+
+	for _, url := range page.GetChildrenURL() {
+		childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0)}
+		childPage.ExtractTitle()
+		childPage.ExtractLastModified()
+		childPage.ExtractSize()
+		childPage.ExtractWords()
+		childPage.ExtractLinks()
+		// fmt.Println(childPage.GetTitle())
+		if childPage.GetTitle() != "" {
+			children := "---------------------------------------\n" + childPage.GetTitle() + "\n" + childPage.GetURL() + "\n" + childPage.GetLastModified() + ", " + childPage.GetSize() + "\n" + strings.Join(childPage.GetKeywords(), " ") + "\n" + strings.Join(childPage.GetChildrenURL(), "\n") + "\n"
+			head += children
+		}
+	}
+
+	l, err := f.WriteString(head)
+	if err != nil {
+		fmt.Println(err)
+		f.Close()
+		return
+	}
+
+	fmt.Println(l, "bytes written successfully")
+	err = f.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
 
 func main() {
 	const baseURL = "https://www.cse.ust.hk/"
-	crawler := Crawler{baseURL}
-	crawler.GetTitle()
-	crawler.ExtractLinks()
+	page := Page{baseURL, "", "", "", make([]string, 0), make([]string, 0)}
+	page.WriteIndexed()
 }
+
+// javascript:alert(document.lastModified)
+// https://www.techinasia.com/top-funded-startups-tech-companies-india?ref=subexc-444416
+
+/*
+	res, err := http.Head("https://www.bloomberg.com/markets")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(res.Header)
+*/
