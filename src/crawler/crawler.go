@@ -252,38 +252,44 @@ func (page *Page) ExtractLinks() {
 }
 
 // MakeChildren given a page, create its children page and append it into the same slice with the parent
-func (page *Page) MakeChildren(pages *[]*Page) {
+func (page *Page) MakeChildren(pages *map[string]*Page) {
 	for _, url := range page.GetChildrenURL() {
 		childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0), make([]string, 0)}
 		childPage.ExtractTitle()
+		if childPage.GetTitle() == "" {
+			continue
+		}
 		childPage.ExtractLastModified()
 		childPage.ExtractWords()
 		childPage.ExtractSize()
 		childPage.ExtractLinks()
-		childPage.parentURL = append(childPage.parentURL, page.GetURL())
-		*pages = append(*pages, &childPage)
+		// childPage.parentURL = append(childPage.parentURL, page.GetURL())
+		(*pages)[childPage.GetTitle()] = &childPage
+		// *pages = append(*pages, &childPage)
 	}
 }
 
 // WriteIndexed write the result of extraction into a file.txt
-func WriteIndexed(pages *[]*Page) {
-	(*pages)[0].ExtractTitle()
-	(*pages)[0].ExtractLastModified()
-	(*pages)[0].ExtractWords()
-	(*pages)[0].ExtractSize()
-	(*pages)[0].ExtractLinks()
+func (page *Page) WriteIndexed(pages *map[string]*Page) {
+	basePage := (*pages)[page.GetTitle()]
+	// basePage.ExtractTitle()
+	// basePage.ExtractLastModified()
+	// basePage.ExtractWords()
+	// basePage.ExtractSize()
+	// basePage.ExtractLinks()
 	f, err := os.Create("spider_result.txt")
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	head := "TITLE: " + (*pages)[0].GetTitle() + "\n" + (*pages)[0].GetURL() + "\n" + "DATE: " + (*pages)[0].GetLastModified() + ", " + (*pages)[0].GetSize() + "\n" + strings.Join((*pages)[0].GetKeywords(), " ") + "\n" + strings.Join((*pages)[0].GetChildrenURL(), "\n") + "\n"
-	(*pages)[0].MakeChildren(pages)
-	for i := 1; i < len(*pages); i++ {
-		if (*pages)[i].GetTitle() != "" {
-			children := "----------------------------------------------\n" + "TITLE: " + (*pages)[i].GetTitle() + "\n" + (*pages)[i].GetURL() + "\n" + "DATE: " + (*pages)[i].GetLastModified() + ", " + (*pages)[i].GetSize() + "\n" + strings.Join((*pages)[i].GetKeywords(), " ") + "\n" + strings.Join((*pages)[i].GetChildrenURL(), "\n") + "\n"
-			head += children
-		}
+	head := ""
+	// head := "TITLE: " + basePage.GetTitle() + "\n" + basePage.GetURL() + "\n" + "DATE: " + basePage.GetLastModified() + ", " + basePage.GetSize() + "\n" + strings.Join(basePage.GetKeywords(), " ") + "\n" + strings.Join(basePage.GetChildrenURL(), "\n") + "\n"
+	basePage.MakeChildren(pages)
+
+	for _, child := range *pages {
+		children := "----------------------------------------------\n" + "TITLE: " + child.GetTitle() + "\n" + child.GetURL() + "\n" + "DATE: " + child.GetLastModified() + ", " + child.GetSize() + "\n" + strings.Join(child.GetKeywords(), " ") + "\n" + strings.Join(child.GetChildrenURL(), "\n") + "\n"
+		head += children
+
 	}
 
 	_, err = f.WriteString(head)
@@ -305,12 +311,23 @@ func main() {
 	const baseURL = "https://www.cse.ust.hk/"
 	fmt.Println(time.Now())
 
-	pages := make([]*Page, 0)
+	pagesMap := make(map[string]*Page)
 	basePage := Page{baseURL, "", "", "", make([]string, 0), nil, make([]string, 0)}
-	pages = append(pages, &basePage)
-	WriteIndexed(&pages)
+
+	basePage.ExtractTitle()
+	basePage.ExtractLastModified()
+	basePage.ExtractWords()
+	basePage.ExtractSize()
+	basePage.ExtractLinks()
+
+	title := basePage.GetTitle()
+	pagesMap[title] = &basePage
+
+	basePage.WriteIndexed(&pagesMap)
+	// fmt.Println(len(pagesMap))
 
 	fmt.Println(time.Now())
+
 }
 
 // javascript:alert(document.lastModified)
