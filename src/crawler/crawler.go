@@ -1,4 +1,4 @@
-package main
+package crawler
 
 import (
 	"fmt"
@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 	"unicode/utf8"
 
 	"github.com/PuerkitoBio/goquery"
@@ -16,51 +15,51 @@ import (
 
 // Page struct
 type Page struct {
-	url          string
-	title        string
-	lastModified string
-	pageSize     string
-	keywords     []string
-	parentURL    []string
-	childrenURL  []string
+	URL          string
+	Title        string
+	LastModified string
+	PageSize     string
+	Keywords     []string
+	ParentURL    []string
+	ChildrenURL  []string
 }
 
 // GetURL return url of page
 func (page *Page) GetURL() string {
-	return page.url
+	return page.URL
 }
 
 // GetTitle return title of the page
 func (page *Page) GetTitle() string {
-	return page.title
+	return page.Title
 }
 
 // GetLastModified return the last modified date of a page
 func (page *Page) GetLastModified() string {
-	return page.lastModified
+	return page.LastModified
 }
 
 // GetSize return size of page
 func (page *Page) GetSize() string {
-	return page.pageSize
+	return page.PageSize
 }
 
 // GetKeywords return list of keywords
 func (page *Page) GetKeywords() []string {
-	return page.keywords
+	return page.Keywords
 }
 
-// GetChildrenURL return list of keywords
+// GetChildrenURL return url of its children
 func (page *Page) GetChildrenURL() []string {
-	return page.childrenURL
+	return page.ChildrenURL
 }
 
 // GetParentURL return url of its parents
 func (page *Page) GetParentURL() []string {
-	return page.parentURL
+	return page.ParentURL
 }
 
-// ExtractTitle from each url
+// ExtractTitle extract the title from a given page
 func (page *Page) ExtractTitle() {
 	res, err := http.Get(page.GetURL())
 	if err != nil {
@@ -75,10 +74,10 @@ func (page *Page) ExtractTitle() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	page.title = doc.Find("title").Text()
+	page.Title = doc.Find("title").Text()
 }
 
-// ExtractLastModified extract the last-modified date from a header of a url, return 0 if not found
+// ExtractLastModified extract the last-modified date from a header of a given page, return 0 if not found
 func (page *Page) ExtractLastModified() {
 	res, err := http.Head(page.GetURL())
 	if err != nil {
@@ -90,12 +89,12 @@ func (page *Page) ExtractLastModified() {
 	}
 	if res.Header.Get("Date") != "" {
 		if res.Header.Get("Last-Modified") != "" {
-			page.lastModified = res.Header.Get("Last-Modified")
+			page.LastModified = res.Header.Get("Last-Modified")
 		} else {
-			page.lastModified = res.Header.Get("Date")
+			page.LastModified = res.Header.Get("Date")
 		}
 	} else {
-		page.lastModified = "0"
+		page.LastModified = "0"
 	}
 }
 
@@ -110,17 +109,17 @@ func (page *Page) ExtractSize() {
 		// log.Fatalf("status code error title: %d %s, %s", res.StatusCode, res.Status, page.GetURL())
 	}
 	if res.Header.Get("Content-Length") != "" {
-		page.pageSize = res.Header.Get("Content-Length")
+		page.PageSize = res.Header.Get("Content-Length")
 	} else {
 		count := 0
-		for _, words := range page.keywords {
+		for _, words := range page.Keywords {
 			count += utf8.RuneCountInString(words)
 		}
-		page.pageSize = strconv.Itoa(count)
+		page.PageSize = strconv.Itoa(count)
 	}
 }
 
-// ExtractWords extract keywords of the given url
+// ExtractWords extract keywords from a given page
 func (page *Page) ExtractWords() {
 	res, err := http.Get(page.GetURL())
 	if err != nil {
@@ -143,11 +142,11 @@ func (page *Page) ExtractWords() {
 	}
 	text := strings.Fields(bodytext)
 	for _, keyword := range text {
-		page.keywords = append(page.keywords, keyword)
+		page.Keywords = append(page.Keywords, keyword)
 	}
 }
 
-// getHref get the href attribute from the token
+// getHref get the href attribute from the token from a url
 func getHref(token html.Token) (exist bool, href string) {
 	for _, x := range token.Attr {
 		if x.Key == "href" {
@@ -222,7 +221,7 @@ func getLinks(url string, ch chan string, chFinished chan bool) {
 	}
 }
 
-// ExtractLinks get the links from the url
+// ExtractLinks get the links from the given page
 func (page *Page) ExtractLinks() {
 	foundUrls := make(map[string]bool)
 
@@ -245,13 +244,13 @@ func (page *Page) ExtractLinks() {
 
 	// We're done! Print the results...
 	for url := range foundUrls {
-		page.childrenURL = append(page.childrenURL, url)
+		page.ChildrenURL = append(page.ChildrenURL, url)
 	}
 
 	close(chUrls)
 }
 
-// MakeChildren given a page, create its children page and append it into the same slice with the parent
+// MakeChildren given a page, create its children page from the page's childrenURL and map it to the given map
 func (page *Page) MakeChildren(pages *map[string]*Page) {
 	for _, url := range page.GetChildrenURL() {
 		childPage, ok := (*pages)[url]
@@ -265,16 +264,16 @@ func (page *Page) MakeChildren(pages *map[string]*Page) {
 			childPage.ExtractWords()
 			childPage.ExtractSize()
 			childPage.ExtractLinks()
-			childPage.parentURL = append(childPage.parentURL, page.GetURL())
-			(*pages)[childPage.url] = &childPage
+			childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
+			(*pages)[childPage.URL] = &childPage
 		} else {
-			childPage.parentURL = append(childPage.parentURL, page.GetURL())
+			childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
 		}
 
 	}
 }
 
-// WriteIndexed write the result of extraction into a file.txt
+// WriteIndexed write the page data into an external file given a page map
 func (page *Page) WriteIndexed(pages *map[string]*Page) {
 	basePage := (*pages)[page.GetURL()]
 	// basePage.ExtractTitle()
@@ -312,37 +311,37 @@ func (page *Page) WriteIndexed(pages *map[string]*Page) {
 	}
 }
 
-func main() {
-	const baseURL = "https://www.cse.ust.hk/"
-	fmt.Println(time.Now())
+// func main() {
+// 	const baseURL = "https://www.cse.ust.hk/"
+// 	fmt.Println(time.Now())
 
-	// pages := make([]*Page, 0)
-	// basePage := Page{baseURL, "", "", "", make([]string, 0), nil, make([]string, 0)}
-	// pages = append(pages, &basePage)
-	// WriteIndexed(&pages)
+// 	// pages := make([]*Page, 0)
+// 	// basePage := Page{baseURL, "", "", "", make([]string, 0), nil, make([]string, 0)}
+// 	// pages = append(pages, &basePage)
+// 	// WriteIndexed(&pages)
 
-	pagesMap := make(map[string]*Page)
-	basePage := Page{baseURL, "", "", "", make([]string, 0), nil, make([]string, 0)}
+// 	pagesMap := make(map[string]*Page)
+// 	basePage := Page{baseURL, "", "", "", make([]string, 0), nil, make([]string, 0)}
 
-	basePage.ExtractTitle()
-	basePage.ExtractLastModified()
-	basePage.ExtractWords()
-	basePage.ExtractSize()
-	basePage.ExtractLinks()
+// 	basePage.ExtractTitle()
+// 	basePage.ExtractLastModified()
+// 	basePage.ExtractWords()
+// 	basePage.ExtractSize()
+// 	basePage.ExtractLinks()
 
-	pagesMap[baseURL] = &basePage
+// 	pagesMap[baseURL] = &basePage
 
-	basePage.WriteIndexed(&pagesMap)
+// 	basePage.WriteIndexed(&pagesMap)
 
-	// // contoh cara ngeindex dari map
-	// another := pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"]
-	// fmt.Println(another.GetParentURL())
-	// fmt.Println(pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"])
-	// fmt.Println(len(pagesMap))
+// 	// // contoh cara ngeindex dari map
+// 	// another := pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"]
+// 	// fmt.Println(another.GetParentURL())
+// 	// fmt.Println(pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"])
+// 	// fmt.Println(len(pagesMap))
 
-	fmt.Println(time.Now())
+// 	fmt.Println(time.Now())
 
-}
+// }
 
 // javascript:alert(document.lastModified)
 // https://www.techinasia.com/top-funded-startups-tech-companies-india?ref=subexc-444416
