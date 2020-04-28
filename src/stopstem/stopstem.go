@@ -1,4 +1,78 @@
-package main
+package stopstem
+
+import (
+	"io/ioutil"
+	"log"
+	"path/filepath"
+	"regexp"
+	"strings"
+
+	"../crawler"
+	"github.com/reiver/go-porterstemmer"
+)
+
+var stopWordsBool map[string]bool
+
+var stopwordfile = "../assets/stopwords.txt"
+var writefile = "./spider_result_stem.txt"
+
+//InputStopWords function to put all the stopwords listed in the .txt file (duplicates are removed)
+func InputStopWords() {
+	absPath, _ := filepath.Abs(stopwordfile)
+	data, err := ioutil.ReadFile(absPath)
+	if err != nil {
+		panic(err)
+	}
+	newlineRegex := regexp.MustCompile("\r?\n")
+	stopWordsString := newlineRegex.ReplaceAllString(string(data), " ")
+	stopWordsArr := strings.Split(stopWordsString, " ")
+	stopWordsBool = make(map[string]bool)
+
+	for _, word := range stopWordsArr {
+		stopWordsBool[word] = true
+	}
+}
+
+//CheckStopWords function to check whether input s is in the map of stopwords
+func CheckStopWords(s string) bool {
+	if stopWordsBool == nil {
+		InputStopWords()
+	}
+	return stopWordsBool[s]
+}
+
+//StemThemAll function to remove the unneccessary words
+func StemThemAll(pages *map[string]*crawler.Page) map[string]*crawler.Page {
+	//create a new map for the return
+	stemPagesMap := make(map[string]*crawler.Page)
+	var result []byte
+	for key, value := range *pages {
+		stemPagesMap[key] = value
+		keywordstring := value.GetKeywords()
+		var stemmedkeyword []string
+		for _, word := range keywordstring {
+			word = strings.ToLower(word)
+			if CheckStopWords(word) {
+				continue
+			}
+			reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+			if err != nil {
+				log.Fatal(err)
+			}
+			word = reg.ReplaceAllString(string(word), "")
+			word = porterstemmer.StemString(word)
+			stemmedkeyword = append(stemmedkeyword, word)
+		}
+		stemPagesMap[key].Keywords = stemmedkeyword
+		urltext := []byte(value.GetTitle() + "\n" + value.GetURL() + "\n" + value.GetLastModified() + ", " + value.GetSize() + "\n" + strings.Join(value.GetKeywords(), " ") + "\n" + strings.Join(value.GetChildrenURL(), "\n") + "\n")
+		result = append(result, urltext...)
+	}
+	WritePath, _ := filepath.Abs(writefile)
+	_ = ioutil.WriteFile(WritePath, result, 0644)
+	return stemPagesMap
+}
+
+/* package main
 
 import (
 	"bytes"
@@ -54,8 +128,6 @@ func StemThemAll() {
 	var result []byte
 	txtlines := bytes.Split(crawled, []byte("\n"))
 
-	result = append(result, txtlines[1]...)
-
 	for _, lines := range txtlines {
 		//if it is a title
 		if strings.HasPrefix(string(lines), "TITLE: ") {
@@ -110,3 +182,4 @@ func main() {
 	InputStopWords()
 	StemThemAll()
 }
+*/

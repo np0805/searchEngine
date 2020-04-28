@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"./crawler"
+	"./stopstem"
 )
 
 // Crawl crawl a given url as its base url,
@@ -27,6 +28,7 @@ func Crawl(baseURL string) map[string]*crawler.Page {
 	basePage.ExtractLinks()
 	pagesMap[baseURL] = &basePage
 	basePage.MakeChildren(&pagesMap)
+	basePage.WriteIndexed(&pagesMap)
 
 	return pagesMap
 }
@@ -50,4 +52,6 @@ func main() {
 		another := pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"]
 		fmt.Println(another.GetTitle())
 	*/
+	stopstem.InputStopWords()
+	stopstem.StemThemAll(&pagesMap)
 }
