@@ -5,8 +5,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
@@ -110,7 +112,11 @@ func (page *Page) ExtractSize() {
 	if res.Header.Get("Content-Length") != "" {
 		page.pageSize = res.Header.Get("Content-Length")
 	} else {
-		page.pageSize = "-1"
+		count := 0
+		for _, words := range page.keywords {
+			count += utf8.RuneCountInString(words)
+		}
+		page.pageSize = strconv.Itoa(count)
 	}
 }
 
@@ -139,7 +145,6 @@ func (page *Page) ExtractWords() {
 	for _, keyword := range text {
 		page.keywords = append(page.keywords, keyword)
 	}
-
 }
 
 // getHref get the href attribute from the token
@@ -252,8 +257,8 @@ func (page *Page) MakeChildren(pages *[]*Page) {
 		childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0), make([]string, 0)}
 		childPage.ExtractTitle()
 		childPage.ExtractLastModified()
-		childPage.ExtractSize()
 		childPage.ExtractWords()
+		childPage.ExtractSize()
 		childPage.ExtractLinks()
 		childPage.parentURL = append(childPage.parentURL, page.GetURL())
 		*pages = append(*pages, &childPage)
@@ -264,8 +269,8 @@ func (page *Page) MakeChildren(pages *[]*Page) {
 func WriteIndexed(pages *[]*Page) {
 	(*pages)[0].ExtractTitle()
 	(*pages)[0].ExtractLastModified()
-	(*pages)[0].ExtractSize()
 	(*pages)[0].ExtractWords()
+	(*pages)[0].ExtractSize()
 	(*pages)[0].ExtractLinks()
 	f, err := os.Create("spider_result.txt")
 	if err != nil {
