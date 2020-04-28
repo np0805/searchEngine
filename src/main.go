@@ -7,15 +7,8 @@ import (
 	"./crawler"
 )
 
-func main() {
-	const baseURL = "https://www.cse.ust.hk/"
-	fmt.Println(time.Now())
-
-	// pages := make([]*Page, 0)
-	// basePage := Page{baseURL, "", "", "", make([]string, 0), nil, make([]string, 0)}
-	// pages = append(pages, &basePage)
-	// WriteIndexed(&pages)
-
+// Crawl crawl a given url as its base url, returning a mapping of url --> page struct
+func Crawl(baseURL string) map[string]*crawler.Page {
 	pagesMap := make(map[string]*crawler.Page)
 	basePage := crawler.Page{
 		URL:          baseURL,
@@ -31,8 +24,17 @@ func main() {
 	basePage.ExtractWords()
 	basePage.ExtractSize()
 	basePage.ExtractLinks()
-
 	pagesMap[baseURL] = &basePage
+
+	return pagesMap
+}
+
+func main() {
+	const baseURL = "https://www.cse.ust.hk/"
+	fmt.Println(time.Now())
+
+	pagesMap := Crawl(baseURL)
+	basePage := pagesMap[baseURL]
 
 	basePage.WriteIndexed(&pagesMap)
 
