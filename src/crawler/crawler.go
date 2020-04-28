@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"golang.org/x/net/html"
@@ -231,28 +232,8 @@ func (page *Page) ExtractLinks() {
 	close(chUrls)
 }
 
-// // ExtractAll extract all words, keywords, title, etc from a given url and its immediate children
-// func (page *Page) ExtractAll() {
-// 	page.ExtractTitle()
-// 	page.ExtractWords()
-// 	page.ExtractLinks()
-// }
-
-// WriteIndexed write the result of extraction into a file.txt
-func (page *Page) WriteIndexed() {
-	page.ExtractTitle()
-	page.ExtractLastModified()
-	page.ExtractSize()
-	page.ExtractWords()
-	page.ExtractLinks()
-	f, err := os.Create("spider_result.txt")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	head := "TITLE: " + page.GetTitle() + "\n" + page.GetURL() + "\n" + "DATE: " + page.GetLastModified() + ", " + page.GetSize() + "\n" + strings.Join(page.GetKeywords(), " ") + "\n" + strings.Join(page.GetChildrenURL(), "\n") + "\n"
-
+// MakeChildren given a page, create its children page and append it into the same slice with the parent
+func (page *Page) MakeChildren(pages *[]*Page) {
 	for _, url := range page.GetChildrenURL() {
 		childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0)}
 		childPage.ExtractTitle()
@@ -260,8 +241,27 @@ func (page *Page) WriteIndexed() {
 		childPage.ExtractSize()
 		childPage.ExtractWords()
 		childPage.ExtractLinks()
-		if childPage.GetTitle() != "" {
-			children := "----------------------------------------------\n" + "TITLE: " + childPage.GetTitle() + "\n" + childPage.GetURL() + "\n" + "DATE: " + childPage.GetLastModified() + ", " + childPage.GetSize() + "\n" + strings.Join(childPage.GetKeywords(), " ") + "\n" + strings.Join(childPage.GetChildrenURL(), "\n") + "\n"
+		*pages = append(*pages, &childPage)
+	}
+}
+
+// WriteIndexed write the result of extraction into a file.txt
+func WriteIndexed(pages *[]*Page) {
+	(*pages)[0].ExtractTitle()
+	(*pages)[0].ExtractLastModified()
+	(*pages)[0].ExtractSize()
+	(*pages)[0].ExtractWords()
+	(*pages)[0].ExtractLinks()
+	f, err := os.Create("spider_result.txt")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	head := "TITLE: " + (*pages)[0].GetTitle() + "\n" + (*pages)[0].GetURL() + "\n" + "DATE: " + (*pages)[0].GetLastModified() + ", " + (*pages)[0].GetSize() + "\n" + strings.Join((*pages)[0].GetKeywords(), " ") + "\n" + strings.Join((*pages)[0].GetChildrenURL(), "\n") + "\n"
+	(*pages)[0].MakeChildren(pages)
+	for i := 1; i < len(*pages); i++ {
+		if (*pages)[i].GetTitle() != "" {
+			children := "----------------------------------------------\n" + "TITLE: " + (*pages)[i].GetTitle() + "\n" + (*pages)[i].GetURL() + "\n" + "DATE: " + (*pages)[i].GetLastModified() + ", " + (*pages)[i].GetSize() + "\n" + strings.Join((*pages)[i].GetKeywords(), " ") + "\n" + strings.Join((*pages)[i].GetChildrenURL(), "\n") + "\n"
 			head += children
 		}
 	}
@@ -283,8 +283,14 @@ func (page *Page) WriteIndexed() {
 
 func main() {
 	const baseURL = "https://www.cse.ust.hk/"
-	page := Page{baseURL, "", "", "", make([]string, 0), make([]string, 0)}
-	page.WriteIndexed()
+	fmt.Println(time.Now())
+
+	pages := make([]*Page, 0)
+	basePage := Page{baseURL, "", "", "", make([]string, 0), make([]string, 0)}
+	pages = append(pages, &basePage)
+	WriteIndexed(&pages)
+
+	fmt.Println(time.Now())
 }
 
 // javascript:alert(document.lastModified)
