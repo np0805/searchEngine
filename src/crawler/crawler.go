@@ -19,6 +19,7 @@ type Page struct {
 	lastModified string
 	pageSize     string
 	keywords     []string
+	parentURL    []string
 	childrenURL  []string
 }
 
@@ -50,6 +51,11 @@ func (page *Page) GetKeywords() []string {
 // GetChildrenURL return list of keywords
 func (page *Page) GetChildrenURL() []string {
 	return page.childrenURL
+}
+
+// GetParentURL return url of page
+func (page *Page) GetParentURL() []string {
+	return page.parentURL
 }
 
 // ExtractTitle from each url
@@ -193,8 +199,16 @@ func getLinks(url string, ch chan string, chFinished chan bool) {
 			startSlash := strings.Index(url, "/") == 0
 			if hasProto || startSlash {
 				if startSlash {
-					url = baseURL + url
-					ch <- url
+					// make sure there's no duplicate e.g. http://www.cse.ust.hk//pg
+					if string(baseURL[len(baseURL)-1]) == "/" {
+						newurl := baseURL[:len(baseURL)-1]
+						url = newurl + url
+						ch <- url
+					} else {
+						url = baseURL + url
+						ch <- url
+					}
+
 				} else {
 					ch <- url
 				}
@@ -235,12 +249,13 @@ func (page *Page) ExtractLinks() {
 // MakeChildren given a page, create its children page and append it into the same slice with the parent
 func (page *Page) MakeChildren(pages *[]*Page) {
 	for _, url := range page.GetChildrenURL() {
-		childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0)}
+		childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0), make([]string, 0)}
 		childPage.ExtractTitle()
 		childPage.ExtractLastModified()
 		childPage.ExtractSize()
 		childPage.ExtractWords()
 		childPage.ExtractLinks()
+		childPage.parentURL = append(childPage.parentURL, page.GetURL())
 		*pages = append(*pages, &childPage)
 	}
 }
@@ -286,7 +301,7 @@ func main() {
 	fmt.Println(time.Now())
 
 	pages := make([]*Page, 0)
-	basePage := Page{baseURL, "", "", "", make([]string, 0), make([]string, 0)}
+	basePage := Page{baseURL, "", "", "", make([]string, 0), nil, make([]string, 0)}
 	pages = append(pages, &basePage)
 	WriteIndexed(&pages)
 
