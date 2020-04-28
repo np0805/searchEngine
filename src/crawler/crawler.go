@@ -55,7 +55,7 @@ func (page *Page) GetChildrenURL() []string {
 	return page.childrenURL
 }
 
-// GetParentURL return url of page
+// GetParentURL return url of its parents
 func (page *Page) GetParentURL() []string {
 	return page.parentURL
 }
@@ -99,7 +99,7 @@ func (page *Page) ExtractLastModified() {
 	}
 }
 
-// ExtractSize extract the size of the page if found, -1 if not found
+// ExtractSize extract the size of the page if found, if not found then value will be size of characters in the page
 func (page *Page) ExtractSize() {
 	res, err := http.Head(page.GetURL())
 	if err != nil {
@@ -120,7 +120,7 @@ func (page *Page) ExtractSize() {
 	}
 }
 
-// ExtractWords from each url
+// ExtractWords extract keywords of the given url
 func (page *Page) ExtractWords() {
 	res, err := http.Get(page.GetURL())
 	if err != nil {
@@ -254,24 +254,29 @@ func (page *Page) ExtractLinks() {
 // MakeChildren given a page, create its children page and append it into the same slice with the parent
 func (page *Page) MakeChildren(pages *map[string]*Page) {
 	for _, url := range page.GetChildrenURL() {
-		childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0), make([]string, 0)}
-		childPage.ExtractTitle()
-		if childPage.GetTitle() == "" {
-			continue
+		childPage, ok := (*pages)[url]
+		if !ok {
+			childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0), make([]string, 0)}
+			childPage.ExtractTitle()
+			if childPage.GetTitle() == "" {
+				continue
+			}
+			childPage.ExtractLastModified()
+			childPage.ExtractWords()
+			childPage.ExtractSize()
+			childPage.ExtractLinks()
+			childPage.parentURL = append(childPage.parentURL, page.GetURL())
+			(*pages)[childPage.url] = &childPage
+		} else {
+			childPage.parentURL = append(childPage.parentURL, page.GetURL())
 		}
-		childPage.ExtractLastModified()
-		childPage.ExtractWords()
-		childPage.ExtractSize()
-		childPage.ExtractLinks()
-		// childPage.parentURL = append(childPage.parentURL, page.GetURL())
-		(*pages)[childPage.GetTitle()] = &childPage
-		// *pages = append(*pages, &childPage)
+
 	}
 }
 
 // WriteIndexed write the result of extraction into a file.txt
 func (page *Page) WriteIndexed(pages *map[string]*Page) {
-	basePage := (*pages)[page.GetTitle()]
+	basePage := (*pages)[page.GetURL()]
 	// basePage.ExtractTitle()
 	// basePage.ExtractLastModified()
 	// basePage.ExtractWords()
@@ -311,6 +316,11 @@ func main() {
 	const baseURL = "https://www.cse.ust.hk/"
 	fmt.Println(time.Now())
 
+	// pages := make([]*Page, 0)
+	// basePage := Page{baseURL, "", "", "", make([]string, 0), nil, make([]string, 0)}
+	// pages = append(pages, &basePage)
+	// WriteIndexed(&pages)
+
 	pagesMap := make(map[string]*Page)
 	basePage := Page{baseURL, "", "", "", make([]string, 0), nil, make([]string, 0)}
 
@@ -320,10 +330,14 @@ func main() {
 	basePage.ExtractSize()
 	basePage.ExtractLinks()
 
-	title := basePage.GetTitle()
-	pagesMap[title] = &basePage
+	pagesMap[baseURL] = &basePage
 
 	basePage.WriteIndexed(&pagesMap)
+
+	// // contoh cara ngeindex dari map
+	// another := pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"]
+	// fmt.Println(another.GetParentURL())
+	// fmt.Println(pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"])
 	// fmt.Println(len(pagesMap))
 
 	fmt.Println(time.Now())
