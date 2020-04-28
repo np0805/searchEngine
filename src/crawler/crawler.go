@@ -203,7 +203,7 @@ func getLinks(url string, ch chan string, chFinished chan bool) {
 			startSlash := strings.Index(url, "/") == 0
 			if hasProto || startSlash {
 				if startSlash {
-					// make sure there's no duplicate e.g. http://www.cse.ust.hk//pg
+					// make sure there's no duplicate "/" e.g. http://www.cse.ust.hk//pg
 					if string(baseURL[len(baseURL)-1]) == "/" {
 						newurl := baseURL[:len(baseURL)-1]
 						url = newurl + url
@@ -276,11 +276,6 @@ func (page *Page) MakeChildren(pages *map[string]*Page) {
 // WriteIndexed write the page data into an external file given a page map
 func (page *Page) WriteIndexed(pages *map[string]*Page) {
 	basePage := (*pages)[page.GetURL()]
-	// basePage.ExtractTitle()
-	// basePage.ExtractLastModified()
-	// basePage.ExtractWords()
-	// basePage.ExtractSize()
-	// basePage.ExtractLinks()
 	f, err := os.Create("spider_result.txt")
 	if err != nil {
 		fmt.Println(err)
@@ -310,51 +305,3 @@ func (page *Page) WriteIndexed(pages *map[string]*Page) {
 		return
 	}
 }
-
-// func main() {
-// 	const baseURL = "https://www.cse.ust.hk/"
-// 	fmt.Println(time.Now())
-
-// 	// pages := make([]*Page, 0)
-// 	// basePage := Page{baseURL, "", "", "", make([]string, 0), nil, make([]string, 0)}
-// 	// pages = append(pages, &basePage)
-// 	// WriteIndexed(&pages)
-
-// 	pagesMap := make(map[string]*Page)
-// 	basePage := Page{baseURL, "", "", "", make([]string, 0), nil, make([]string, 0)}
-
-// 	basePage.ExtractTitle()
-// 	basePage.ExtractLastModified()
-// 	basePage.ExtractWords()
-// 	basePage.ExtractSize()
-// 	basePage.ExtractLinks()
-
-// 	pagesMap[baseURL] = &basePage
-
-// 	basePage.WriteIndexed(&pagesMap)
-
-// 	// // contoh cara ngeindex dari map
-// 	// another := pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"]
-// 	// fmt.Println(another.GetParentURL())
-// 	// fmt.Println(pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"])
-// 	// fmt.Println(len(pagesMap))
-
-// 	fmt.Println(time.Now())
-
-// }
-
-// javascript:alert(document.lastModified)
-// https://www.techinasia.com/top-funded-startups-tech-companies-india?ref=subexc-444416
-
-/*
-	// res, err := http.Get("https://www.cse.ust.hk/")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// robots, err := ioutil.ReadAll(res.Body)
-	// res.Body.Close()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// fmt.Printf("%s", robots)
-*/
