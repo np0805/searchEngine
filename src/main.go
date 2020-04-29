@@ -42,16 +42,18 @@ func main() {
 	fmt.Println(time.Now())
 
 	// contoh cara ngambil page dari map
-	for _, page := range pagesMap {
+	/* for _, page := range pagesMap {
 		fmt.Println(page.GetTitle())
 		fmt.Println(page.GetKeywords())
 		break
-	}
+	} */
 	/*
 		contoh cara lain buat ngambil page dari map
 		another := pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"]
 		fmt.Println(another.GetTitle())
 	*/
 	stopstem.InputStopWords()
+	fmt.Println(time.Now())
 	stopstem.StemThemAll(&pagesMap)
+	fmt.Println(time.Now())
 }
