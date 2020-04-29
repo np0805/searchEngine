@@ -276,7 +276,7 @@ func (page *Page) MakeChildren(pages *map[string]*Page) {
 // WriteIndexed write the page data into an external file given a page map
 func (page *Page) WriteIndexed(pages *map[string]*Page) {
 	basePage := (*pages)[page.GetURL()]
-	f, err := os.Create("spider_result.txt")
+	f, err := os.Create("../assets/spider_result.txt")
 	if err != nil {
 		fmt.Println(err)
 		return

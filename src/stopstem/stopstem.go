@@ -14,7 +14,7 @@ import (
 var stopWordsBool map[string]bool
 
 var stopwordfile = "../assets/stopwords.txt"
-var writefile = "./spider_result_stem.txt"
+var writefile = "../assets/spider_result_stem.txt"
 
 //InputStopWords function to put all the stopwords listed in the .txt file (duplicates are removed)
 func InputStopWords() {
