@@ -159,8 +159,7 @@ func getHref(token html.Token) (exist bool, href string) {
 
 // getLinks get the links from the given url
 func getLinks(url string, ch chan string, chFinished chan bool) {
-	baseURL := url
-	resp, err := http.Get(baseURL)
+	resp, err := http.Get(url)
 
 	defer func() {
 		// Notify that we're done after this function
@@ -198,24 +197,27 @@ func getLinks(url string, ch chan string, chFinished chan bool) {
 				continue
 			}
 
-			// Make sure the url begines in http**
-			hasProto := strings.Index(url, "http") == 0
+			// Make sure the url begines in https://www.cse.ust.hk/ as we only index from those pages
+			hasProto := strings.Index(url, "https://www.cse.ust.hk/") == 0
 			startSlash := strings.Index(url, "/") == 0
+			cseHK := "https://www.cse.ust.hk"
 			if hasProto || startSlash {
 				if startSlash {
 					// make sure there's no duplicate "/" e.g. http://www.cse.ust.hk//pg
-					if string(baseURL[len(baseURL)-1]) == "/" {
-						newurl := baseURL[:len(baseURL)-1]
-						url = newurl + url
-						ch <- url
-					} else {
-						url = baseURL + url
-						ch <- url
-					}
+					// if string(cseHK[len(baseURL)-1]) == "/" {
+					// 	newurl := baseURL[:len(baseURL)-1]
+					// 	url = newurl + url
+					// 	ch <- url
+					// } else {
+					url = cseHK + url
+					ch <- url
+					// }
 
 				} else {
 					ch <- url
 				}
+			} else {
+				continue
 			}
 		}
 	}
@@ -253,6 +255,8 @@ func (page *Page) ExtractLinks() {
 // MakeChildren given a page, create its children page from the page's childrenURL and map it to the given map
 func (page *Page) MakeChildren(pages *map[string]*Page) {
 	for _, url := range page.GetChildrenURL() {
+		// check if it is from cse.ust.hk
+		// if strings.Index(url, "https://www.cse.ust.hk/") == 0 {
 		childPage, ok := (*pages)[url]
 		if !ok {
 			childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0), make([]string, 0)}
@@ -266,10 +270,18 @@ func (page *Page) MakeChildren(pages *map[string]*Page) {
 			childPage.ExtractLinks()
 			childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
 			(*pages)[childPage.URL] = &childPage
+			// Computer recursively
+			childPage.MakeChildren(pages)
 		} else {
-			childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
+			// Check for circular dependency
+			if childPage.GetURL() == page.GetURL() {
+				// fmt.Println("Yaha kamu ketauan")
+				continue
+			} else {
+				// fmt.Println("eits sudah pernah bro")
+				childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
+			}
 		}
-
 	}
 }
 
