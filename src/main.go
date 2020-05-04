@@ -6,6 +6,7 @@ import (
 
 	"./crawler"
 	"./stopstem"
+  "./database"
 )
 
 // Crawl crawl a given url as its base url,
@@ -40,7 +41,6 @@ func main() {
 	pagesMap := Crawl(baseURL) // get the mapping of url --> page struct
 	fmt.Println("Len of map %v", len(pagesMap))
 
-	fmt.Println(time.Now())
 
 	// contoh cara ngambil page dari map
 	// for _, page := range pagesMap {
@@ -60,7 +60,19 @@ func main() {
 	stopstem.InputStopWords()
 	newMap := stopstem.StemThemAll(&pagesMap)
 	fmt.Println(len(newMap))
+  database.OpenPageDb()
 
+	for _, page := range newMap {
+    _ = database.GetPageId(page.GetURL())
+	}
+
+  for _, page := range newMap {
+    var test int64 = 0
+    test = database.GetPageId(page.GetURL())
+    fmt.Println(test)
+  }
+
+	fmt.Println(time.Now())
 	// mapAkhir := newMap["https://www.cse.ust.hk/admin/people/staff/"]
 	// fmt.Println(mapAkhir.GetTitle())
 	// fmt.Println(mapAkhir.GetKeywords())
