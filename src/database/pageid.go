@@ -9,23 +9,23 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-var pageid *bolt.DB
-var firstBucket string = "pageToIdBuck"
-var secondBucket string = "idToPageBuck"
+var pageId *bolt.DB
+var pageToIdBuck string = "pageToIdBuck"
+var idToPageBuck string = "idToPageBuck"
 
-// open pageid database
+// open pageId database
 // initialise buckets
-func openPageDb() {
+func openPageIdDb() {
   var err error
-  pageid, err = bolt.Open("db"+string(os.PathSeparator)+"pageid.db", 0700, nil)
+  pageId, err = bolt.Open("db"+string(os.PathSeparator)+"pageId.db", 0700, nil)
   if err != nil {
     log.Fatal(err)
   }
 
-  err = pageid.Update(func(tx *bolt.Tx) error {
-    pageToId, err := tx.CreateBucketIfNotExists([]byte(firstBucket))
+  err = pageId.Update(func(tx *bolt.Tx) error {
+    pageToId, err := tx.CreateBucketIfNotExists([]byte(pageToIdBuck))
     if err != nil {
-      return fmt.Errorf("create bucket: %s", err)
+      return fmt.Errorf("pageId create bucket: %s", err)
     }
 
     // initialise the first key/value pair of firstBucket to be the total number of pages
@@ -35,13 +35,13 @@ func openPageDb() {
       pageCount = IntToByte(0)
       err := pageToId.Put(IntToByte(0), pageCount)
       if err != nil {
-        return fmt.Errorf("Initialise pageCount error: %s", err)
+        return fmt.Errorf("pageId initialise pageCount error: %s", err)
       }
     }
     
-    _, err = tx.CreateBucketIfNotExists([]byte(secondBucket))
+    _, err = tx.CreateBucketIfNotExists([]byte(idToPageBuck))
     if err != nil {
-      return fmt.Errorf("create bucket: %s", err)
+      return fmt.Errorf("pageId create bucket: %s", err)
     }
 
     return nil
@@ -51,9 +51,9 @@ func openPageDb() {
   }
 }
 
-// close pageid database
-func closePageDb() {
-  pageid.Close()
+// close pageId database
+func closePageIdDb() {
+  pageId.Close()
 }
 
 // returns pageId of the given url, if the given page url does not exist, create a new one
@@ -65,8 +65,8 @@ func GetPageId(url string) (id int64) {
 
   // check if url of the page already exists first
   // if exists, change id to 
-  pageid.View(func(tx *bolt.Tx) error {
-    pageToId := tx.Bucket([]byte(firstBucket))
+  pageId.View(func(tx *bolt.Tx) error {
+    pageToId := tx.Bucket([]byte(pageToIdBuck))
     value := pageToId.Get([]byte(url))
     // page does not exist yet
     if value == nil {
@@ -81,11 +81,11 @@ func GetPageId(url string) (id int64) {
 
   // if page does not exist yet, insert
   if id == -1 {
-    pageid.Update(func(tx *bolt.Tx) error {
+    pageId.Update(func(tx *bolt.Tx) error {
       count += 1
 
       // insert the new page
-      pageToId := tx.Bucket([]byte(firstBucket))
+      pageToId := tx.Bucket([]byte(pageToIdBuck))
       err := pageToId.Put([]byte(url), IntToByte(count))
       if err != nil {
         return err
@@ -97,7 +97,7 @@ func GetPageId(url string) (id int64) {
         return err
       }
 
-      idToPage := tx.Bucket([]byte(secondBucket))
+      idToPage := tx.Bucket([]byte(idToPageBuck))
       err = idToPage.Put(IntToByte(count), []byte(url))
       if err != nil {
         return err
@@ -111,8 +111,8 @@ func GetPageId(url string) (id int64) {
 
 func GetPageUrl(id int64) (url string) {
   var value []byte
-  pageid.View(func(tx *bolt.Tx) error {
-    idToPage := tx.Bucket([]byte(secondBucket))
+  pageId.View(func(tx *bolt.Tx) error {
+    idToPage := tx.Bucket([]byte(idToPageBuck))
     value = idToPage.Get(IntToByte(id))
     return nil
   })
@@ -124,14 +124,6 @@ func GetPageUrl(id int64) (url string) {
   return
 }
 
-// given a map of pages, parse all the parent pages to get their pageId
-func ParseAllPages(pages map[string]*crawler.Page) {
-	for _, page := range pages {
-    _ = GetPageId(page.GetURL())
-    parseAllChild(page)
-	}
-}
-
 // given a map of pages, parse all the child pages in each parent pages to get their pageId
 func parseAllChild(parent *crawler.Page) {
   // fmt.Println(parent.GetChildrenURL())
@@ -141,9 +133,9 @@ func parseAllChild(parent *crawler.Page) {
 }
 
 func PrintPageIdDb() {
-  pageid.View(func(tx *bolt.Tx) error {
+  pageId.View(func(tx *bolt.Tx) error {
     fmt.Println("PAGE_TO_ID BUCKET")
-    pageToId := tx.Bucket([]byte(firstBucket))
+    pageToId := tx.Bucket([]byte(pageToIdBuck))
     c := pageToId.Cursor()
 
     k, v := c.First()
@@ -158,7 +150,7 @@ func PrintPageIdDb() {
     }
 
     fmt.Println("ID_TO_PAGE BUCKET")
-    idToPage := tx.Bucket([]byte(secondBucket))
+    idToPage := tx.Bucket([]byte(idToPageBuck))
     c = idToPage.Cursor()
     for k, v = c.First(); k != nil; k, v = c.Next() {
       key := ByteToInt(k)
