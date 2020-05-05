@@ -29,11 +29,11 @@ func openPageDb() {
     }
 
     // initialise the first key/value pair of firstBucket to be the total number of pages
-    pageCount := pageToId.Get(intToByte(0))
+    pageCount := pageToId.Get(IntToByte(0))
 
     if pageCount == nil {
-      pageCount = intToByte(0)
-      err := pageToId.Put(intToByte(0), pageCount)
+      pageCount = IntToByte(0)
+      err := pageToId.Put(IntToByte(0), pageCount)
       if err != nil {
         return fmt.Errorf("Initialise pageCount error: %s", err)
       }
@@ -71,9 +71,9 @@ func GetPageId(url string) (id int64) {
     // page does not exist yet
     if value == nil {
       id = -1
-      count = byteToInt(pageToId.Get(intToByte(0)))
+      count = ByteToInt(pageToId.Get(IntToByte(0)))
     } else {
-      id = byteToInt(value)
+      id = ByteToInt(value)
     }
 
    return nil 
@@ -86,19 +86,19 @@ func GetPageId(url string) (id int64) {
 
       // insert the new page
       pageToId := tx.Bucket([]byte(firstBucket))
-      err := pageToId.Put([]byte(url), intToByte(count))
+      err := pageToId.Put([]byte(url), IntToByte(count))
       if err != nil {
         return err
       }
 
       // update the count of the pages in the db
-      err = pageToId.Put(intToByte(0), intToByte(count))
+      err = pageToId.Put(IntToByte(0), IntToByte(count))
       if err != nil {
         return err
       }
 
       idToPage := tx.Bucket([]byte(secondBucket))
-      err = idToPage.Put(intToByte(count), []byte(url))
+      err = idToPage.Put(IntToByte(count), []byte(url))
       if err != nil {
         return err
       }
@@ -113,7 +113,7 @@ func GetPageUrl(id int64) (url string) {
   var value []byte
   pageid.View(func(tx *bolt.Tx) error {
     idToPage := tx.Bucket([]byte(secondBucket))
-    value = idToPage.Get(intToByte(id))
+    value = idToPage.Get(IntToByte(id))
     return nil
   })
 
@@ -124,8 +124,49 @@ func GetPageUrl(id int64) (url string) {
   return
 }
 
+// given a map of pages, parse all the parent pages to get their pageId
 func ParseAllPages(pages map[string]*crawler.Page) {
 	for _, page := range pages {
     _ = GetPageId(page.GetURL())
+    parseAllChild(page)
 	}
+}
+
+// given a map of pages, parse all the child pages in each parent pages to get their pageId
+func parseAllChild(parent *crawler.Page) {
+  // fmt.Println(parent.GetChildrenURL())
+  for _, child := range parent.GetChildrenURL() {
+    _ = GetPageId(child)
+  }
+}
+
+func PrintPageIdDb() {
+  pageid.View(func(tx *bolt.Tx) error {
+    fmt.Println("PAGE_TO_ID BUCKET")
+    pageToId := tx.Bucket([]byte(firstBucket))
+    c := pageToId.Cursor()
+
+    k, v := c.First()
+    key := ByteToInt(k)
+    value := ByteToInt(v)
+    fmt.Println("key: ", key, "value: ", value)
+    k, v = c.Next()
+    for ; k != nil; k, v = c.Next() {
+      key := string(k)
+      value := ByteToInt(v)
+      fmt.Println("key: ", key, "value: ", value)
+    }
+
+    fmt.Println("ID_TO_PAGE BUCKET")
+    idToPage := tx.Bucket([]byte(secondBucket))
+    c = idToPage.Cursor()
+    for k, v = c.First(); k != nil; k, v = c.Next() {
+      key := ByteToInt(k)
+      value := string(v)
+      fmt.Println("key: ", key, "value: ", value)
+    }
+
+
+    return nil
+  })
 }
