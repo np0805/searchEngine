@@ -27,7 +27,7 @@ func Crawl(baseURL string) map[string]*crawler.Page {
 	basePage.ExtractSize()
 	basePage.ExtractLinks()
 	pagesMap[baseURL] = &basePage
-	basePage.MakeChildren(&pagesMap)
+	// basePage.MakeLessChildren(&pagesMap)
 	basePage.WriteIndexed(&pagesMap)
 
 	return pagesMap

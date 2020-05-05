@@ -252,6 +252,40 @@ func (page *Page) ExtractLinks() {
 	close(chUrls)
 }
 
+// MakeLessChildren given a page, create 30 of its children page from the page's childrenURL and map it to the given map
+func (page *Page) MakeLessChildren(pages *map[string]*Page) {
+	for i, url := range page.GetChildrenURL() {
+		// check if it is from cse.ust.hk
+		// if strings.Index(url, "https://www.cse.ust.hk/") == 0 {
+		childPage, ok := (*pages)[url]
+		if !ok {
+			childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0), make([]string, 0)}
+			childPage.ExtractTitle()
+			if childPage.GetTitle() == "" {
+				continue
+			}
+			childPage.ExtractLastModified()
+			childPage.ExtractWords()
+			childPage.ExtractSize()
+			childPage.ExtractLinks()
+			childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
+			(*pages)[childPage.URL] = &childPage
+		} else {
+			// Check for circular dependency
+			if childPage.GetURL() == page.GetURL() {
+				// fmt.Println("Yaha kamu ketauan")
+				continue
+			} else {
+				// fmt.Println("eits sudah pernah bro")
+				childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
+			}
+		}
+		if i==30 {
+			break
+		}
+	}
+}
+
 // MakeChildren given a page, create its children page from the page's childrenURL and map it to the given map
 func (page *Page) MakeChildren(pages *map[string]*Page) {
 	for _, url := range page.GetChildrenURL() {
@@ -295,7 +329,7 @@ func (page *Page) WriteIndexed(pages *map[string]*Page) {
 	}
 	head := ""
 	// head := "TITLE: " + basePage.GetTitle() + "\n" + basePage.GetURL() + "\n" + "DATE: " + basePage.GetLastModified() + ", " + basePage.GetSize() + "\n" + strings.Join(basePage.GetKeywords(), " ") + "\n" + strings.Join(basePage.GetChildrenURL(), "\n") + "\n"
-	basePage.MakeChildren(pages)
+	basePage.MakeLessChildren(pages)
 
 	for _, child := range *pages {
 		children := "----------------------------------------------\n" + "TITLE: " + child.GetTitle() + "\n" + child.GetURL() + "\n" + "DATE: " + child.GetLastModified() + ", " + child.GetSize() + "\n" + strings.Join(child.GetKeywords(), " ") + "\n" + strings.Join(child.GetChildrenURL(), "\n") + "\n"
