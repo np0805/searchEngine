@@ -2,6 +2,10 @@ package database
 
 import "encoding/binary"
 
+func OpenAllDb() {
+  openPageDb()
+}
+
 func intToByte(i int64) []byte {
   b := make([]byte, 8)
   binary.LittleEndian.PutUint64(b, uint64(i))

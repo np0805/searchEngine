@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+  "../crawler"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -14,7 +15,7 @@ var secondBucket string = "idToPageBuck"
 
 // open pageid database
 // initialise buckets
-func OpenPageDb() {
+func openPageDb() {
   var err error
   pageid, err = bolt.Open("db"+string(os.PathSeparator)+"pageid.db", 0700, nil)
   if err != nil {
@@ -51,7 +52,7 @@ func OpenPageDb() {
 }
 
 // close pageid database
-func ClosePageDb() {
+func closePageDb() {
   pageid.Close()
 }
 
@@ -121,4 +122,10 @@ func GetPageUrl(id int64) (url string) {
   }
   url = string(value)
   return
+}
+
+func ParseAllPages(pages map[string]*crawler.Page) {
+	for _, page := range pages {
+    _ = GetPageId(page.GetURL())
+	}
 }

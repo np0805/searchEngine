@@ -60,11 +60,12 @@ func main() {
 	stopstem.InputStopWords()
 	newMap := stopstem.StemThemAll(&pagesMap)
 	fmt.Println(len(newMap))
-  database.OpenPageDb()
+  database.OpenAllDb()
+  database.ParseAllPages(newMap)
 
-	for _, page := range newMap {
-    _ = database.GetPageId(page.GetURL())
-	}
+  // for _, page := range newMap {
+  //   _ = database.GetPageId(page.GetURL())
+	// }
 
   for _, page := range newMap {
     var test int64 = 0
