@@ -63,10 +63,6 @@ func parseAllInfo(page *crawler.Page) {
   info = append(info, page.GetLastModified())
   info = append(info, page.GetSize())
 
-  // value := &bytes.Buffer{}
-  // enc := gob.NewEncoder(value)
-  // enc.Encode(info)
-
   value:= StringToByte(info)
   err := pageInfo.Update(func(tx *bolt.Tx) error {
     // store the info in pageInfoBucket
@@ -74,14 +70,48 @@ func parseAllInfo(page *crawler.Page) {
     pageId := IntToByte(GetPageId(page.GetURL()))
     err := pageInfoBucket.Put(pageId, value)
     if err != nil {
-      return fmt.Errorf("Error in pageInfo: parseAllInfo error: %s", err)
+      return fmt.Errorf("Error in pageInfo: parseAllInfo insert pageInfo error: %s", err)
     }
+
+    // store the parent child relationship in parentChildBucket
+    // TODO convert the child values to pageId
+    parentChildBucket := tx.Bucket([]byte(parentChildBuck))
+    info = page.GetChildrenURL()
+    value = StringToByte(info)
+    err = parentChildBucket.Put(pageId, value)
+    if err != nil {
+      return fmt.Errorf("Error in pageInfo: parseAllInfo insert parentChild error: %s", err)
+    }
+
+    // TODO store the child parent relationship in childParentBucket
     
     return nil
   })
   if err != nil {
     log.Fatal(err)
   }
+}
+
+// given a page url, return the child []string
+func FindChild(url string) (ret []string) {
+  pageId := IntToByte(GetPageId(url))
+  fmt.Println("ID:", GetPageId(url))
+  err := pageInfo.View(func(tx *bolt.Tx) error {
+    parentChildBucket := tx.Bucket([]byte(parentChildBuck))
+    value := parentChildBucket.Get(pageId)
+    if value != nil {
+      ret = ByteToString(parentChildBucket.Get(pageId))
+    } else {
+      ret = nil
+    }
+
+    return nil
+  })
+  if err != nil {
+    log.Fatal(err)
+  }
+  
+  return ret
 }
 
 // print pageInfoDb in human readable format
@@ -91,12 +121,17 @@ func PrintPageInfoDb() {
     pageInfoBucket := tx.Bucket([]byte(pageInfoBuck))
     c := pageInfoBucket.Cursor()
 
+    fmt.Println("pageInfoBucket")
     for k,v := c.First(); k != nil; k, v = c.Next() {
-      key := ByteToInt(k)
-      //var value string = string(v)
-      value := ByteToString(v)
-      fmt.Println("key: ", key, "value: ", value)
-      // fmt.Println("key: ", key)
+      fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
+    }
+
+    fmt.Println("parentChildBucket")
+    parentChildBucket := tx.Bucket([]byte(parentChildBuck))
+    c = parentChildBucket.Cursor()
+
+    for k, v := c.First(); k != nil; k, v = c.Next() {
+      fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
     }
 
     return nil

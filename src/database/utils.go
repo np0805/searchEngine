@@ -1,6 +1,7 @@
 package database
 
 import (
+  "fmt"
   "encoding/binary"
   "../crawler"
 )
@@ -74,7 +75,5 @@ func ParseAllPages(pages map[string]*crawler.Page) {
     parseAllChild(page)
     parseAllInfo(page)
 	}
-  PrintPageIdDb()
-  PrintPageInfoDb()
 }
 
