@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"./crawler"
+	"./pagerank"
 	"./stopstem"
 )
 
@@ -27,7 +28,6 @@ func Crawl(baseURL string) map[string]*crawler.Page {
 	basePage.ExtractSize()
 	basePage.ExtractLinks()
 	pagesMap[baseURL] = &basePage
-	// basePage.MakeLessChildren(&pagesMap)
 	basePage.WriteIndexed(&pagesMap)
 
 	return pagesMap
@@ -42,11 +42,12 @@ func main() {
 
 	fmt.Println(time.Now())
 
+	pagerank.CalculatePageRank(0.85, &pagesMap)
+
 	// contoh cara ngambil page dari map
-	// for _, page := range pagesMap {
-	// 	fmt.Println(page.GetTitle())
-	// 	fmt.Println(page.GetKeywords())
-	// }
+	for _, page := range pagesMap {
+		fmt.Println(page.GetURL(), page.GetPageRank())
+	}
 
 	// mapAwal := pagesMap["https://www.cse.ust.hk/admin/people/staff/"]
 	// fmt.Println(mapAwal.GetTitle())
