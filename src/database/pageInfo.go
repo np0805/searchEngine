@@ -51,10 +51,6 @@ func closePageInfoDb() {
   pageInfo.Close()
 }
 
-// func getAllChild(url string) (allChild []string) {
-// 
-// }
-
 // parse all the info on the given page, including all it's child links
 func parseAllInfo(page *crawler.Page) {
   var info []string
@@ -84,7 +80,44 @@ func parseAllInfo(page *crawler.Page) {
     }
 
     // TODO store the child parent relationship in childParentBucket
+    // check first if GetParentURL is not empty, if not empty, handle
+    childParentBucket := tx.Bucket([]byte(childParentBuck))
+    info = page.GetParentURL()
     
+    // handle info nil
+    if info != nil {
+      // check first if contents of db are empty for that particular pageid
+      parentUrlInDbByte := childParentBucket.Get(pageId)
+      if parentUrlInDbByte != nil {
+        parentUrlInDbString := ByteToString(parentUrlInDbByte)
+        toBeInserted := parentUrlInDbString
+        for _, url := range info {
+          existInDb := false
+          for _, parent := range parentUrlInDbString {
+            if url == parent {
+              existInDb = true
+              break
+            }
+          }
+          if existInDb == false {
+            toBeInserted = append(toBeInserted, url)
+            // fmt.Println("toBeInserted: ", toBeInserted)
+          }
+        }
+        if toBeInserted != nil {
+          err = childParentBucket.Put(pageId, StringToByte(toBeInserted))
+          if err != nil {
+            return fmt.Errorf("Error in pageInfo: childToParent error: %s", err)
+          }
+        }
+      } else {
+        err = childParentBucket.Put(pageId, StringToByte(info))
+        if err != nil {
+          return fmt.Errorf("Error in pageInfo: childToParent error: %s", err)
+        }
+      }
+    }
+
     return nil
   })
   if err != nil {
@@ -95,12 +128,11 @@ func parseAllInfo(page *crawler.Page) {
 // given a page url, return the child []string
 func FindChild(url string) (ret []string) {
   pageId := IntToByte(GetPageId(url))
-  fmt.Println("ID:", GetPageId(url))
   err := pageInfo.View(func(tx *bolt.Tx) error {
     parentChildBucket := tx.Bucket([]byte(parentChildBuck))
     value := parentChildBucket.Get(pageId)
     if value != nil {
-      ret = ByteToString(parentChildBucket.Get(pageId))
+      ret = ByteToString(parentChildBucket.Get(value))
     } else {
       ret = nil
     }
@@ -114,6 +146,25 @@ func FindChild(url string) (ret []string) {
   return ret
 }
 
+// given a page url, return the parent []string
+func FindParent(url string) (ret []string) {
+  pageId := IntToByte(GetPageId(url))
+  err := pageInfo.View(func(tx *bolt.Tx) error {
+    childParentBucket := tx.Bucket([]byte(childParentBuck))
+    value := childParentBucket.Get(pageId)
+    if value != nil {
+      ret = ByteToString(value)
+    } else {
+      ret = nil
+    }
+  })
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  return ret
+}
+
 // print pageInfoDb in human readable format
 func PrintPageInfoDb() {
   pageInfo.View(func(tx *bolt.Tx) error {
@@ -123,7 +174,9 @@ func PrintPageInfoDb() {
 
     fmt.Println("pageInfoBucket")
     for k,v := c.First(); k != nil; k, v = c.Next() {
-      fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
+      if k != nil && v != nil {
+        fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
+      }
     }
 
     fmt.Println("parentChildBucket")
@@ -131,7 +184,19 @@ func PrintPageInfoDb() {
     c = parentChildBucket.Cursor()
 
     for k, v := c.First(); k != nil; k, v = c.Next() {
-      fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
+      if k != nil && v != nil {
+        fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
+      }
+    }
+
+    fmt.Println("childParentBucket")
+    childParentBucket := tx.Bucket([]byte(childParentBuck))
+    c = childParentBucket.Cursor()
+
+    for k, v := c.First(); k != nil; k, v = c.Next() {
+      if k != nil && v != nil {
+        fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
+      }
     }
 
     return nil

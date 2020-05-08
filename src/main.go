@@ -63,6 +63,10 @@ func main() {
   database.OpenAllDb()
   database.ParseAllPages(newMap)
   //database.PrintPageIdDb()
+  // for _, page := range newMap {
+  //   fmt.Println("pageGetURL: ", page.GetURL())
+  //   fmt.Println("getParent: ", page.GetParentURL())
+  // }
 
 	fmt.Println(time.Now())
 	// mapAkhir := newMap["https://www.cse.ust.hk/admin/people/staff/"]
