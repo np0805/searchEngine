@@ -17,7 +17,7 @@ var idToPageBuck string = "idToPageBuck"
 // initialise buckets
 func openPageIdDb() {
   var err error
-  pageId, err = bolt.Open("db"+string(os.PathSeparator)+"pageId.db", 0700, nil)
+  pageId, err = bolt.Open("db" + string(os.PathSeparator) + "pageId.db", 0700, nil)
   if err != nil {
     log.Fatal(err)
   }

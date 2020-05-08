@@ -11,6 +11,7 @@ const maxInt32 = 1<<(32-1) - 1
 func OpenAllDb() {
   openPageIdDb()
   openPageInfoDb()
+  openWordDb()
 }
 
 func CloseAllDb() {
@@ -74,8 +75,10 @@ func ParseAllPages(pages map[string]*crawler.Page) {
     _ = GetPageId(page.GetURL())
     parseAllChild(page)
     parseAllInfo(page)
+    // fmt.Println("page: ", page.GetTitle())
+    // fmt.Println("keywords: ", page.GetKeywords())
+    parseAllWord(page.GetKeywords())
 	}
   fmt.Print("")
-  //PrintPageInfoDb()
 }
 

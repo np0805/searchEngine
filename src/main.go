@@ -67,7 +67,6 @@ func main() {
   //   fmt.Println("pageGetURL: ", page.GetURL())
   //   fmt.Println("getParent: ", page.GetParentURL())
   // }
-
 	fmt.Println(time.Now())
 	// mapAkhir := newMap["https://www.cse.ust.hk/admin/people/staff/"]
 	// fmt.Println(mapAkhir.GetTitle())

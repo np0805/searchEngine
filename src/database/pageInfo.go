@@ -17,7 +17,7 @@ var childParentBuck string = "childParentBuck"
 
 func openPageInfoDb() {
   var err error
-  pageInfo, err = bolt.Open("db"+string(os.PathSeparator)+"pageInfo.db", 0700, nil)
+  pageInfo, err = bolt.Open("db" + string(os.PathSeparator) + "pageInfo.db", 0700, nil)
 
   if err != nil {
     log.Fatal(err)
@@ -157,6 +157,7 @@ func FindParent(url string) (ret []string) {
     } else {
       ret = nil
     }
+    return nil
   })
   if err != nil {
     log.Fatal(err)
@@ -168,13 +169,12 @@ func FindParent(url string) (ret []string) {
 // print pageInfoDb in human readable format
 func PrintPageInfoDb() {
   pageInfo.View(func(tx *bolt.Tx) error {
-    fmt.Println("PAGE_INFO BUCKET")
     pageInfoBucket := tx.Bucket([]byte(pageInfoBuck))
     c := pageInfoBucket.Cursor()
 
     fmt.Println("pageInfoBucket")
-    for k,v := c.First(); k != nil; k, v = c.Next() {
-      if k != nil && v != nil {
+    for k, v := c.First(); k != nil; k, v = c.Next() {
+      if v != nil {
         fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
       }
     }
@@ -184,7 +184,7 @@ func PrintPageInfoDb() {
     c = parentChildBucket.Cursor()
 
     for k, v := c.First(); k != nil; k, v = c.Next() {
-      if k != nil && v != nil {
+      if v != nil {
         fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
       }
     }
@@ -194,7 +194,7 @@ func PrintPageInfoDb() {
     c = childParentBucket.Cursor()
 
     for k, v := c.First(); k != nil; k, v = c.Next() {
-      if k != nil && v != nil {
+      if v != nil {
         fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
       }
     }
