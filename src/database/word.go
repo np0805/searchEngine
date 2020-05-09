@@ -91,6 +91,12 @@ func GetWord(id int64) (word string) {
 }
 
 // TODO given a list of words, get all their ids
+func GetListOfWordId(words []string) (wordIds []int64) {
+  for _, word := range words {
+    wordIds = append(wordIds, GetWordId(word))
+  }
+  return wordIds
+}
 
 // create the wordId for a word and returns the id
 func createWordId(word string) (wordId int64) {
