@@ -14,6 +14,27 @@ func InnerProduct(pageID int64, words []string) (sim float64) {
 	return 6.0
 }
 
+// TitleMatch cek if the given word matches any in the title
+func TitleMatch(word string, pageID int64) bool {
+
+	return true
+}
+
+func PrintTest() {
+	pageInfo.View(func(tx *bolt.Tx) error {
+		pageInfoBucket := tx.Bucket([]byte(pageInfoBuck))
+		c := pageInfoBucket.Cursor()
+		fmt.Println("pageInfoBucket")
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			if v != nil {
+				coba := ByteToString(v)
+				fmt.Println("key: ", k, "value: ", coba)
+			}
+		}
+		return nil
+	})
+}
+
 // TermFreq frequency of term j in document i
 func TermFreq(wordID int64, pageID int) int {
 	idToByte := IntToByte(wordID)
@@ -40,23 +61,48 @@ func TermFreq(wordID int64, pageID int) int {
 	return frequency
 }
 
-// docFreqTerm get document frequency of term j
-func docFreqTerm(wordID int64) int {
-	idToByte := IntToByte(wordID)
-	var length int
+// DocFreqTerm get document frequency of 1 term j
+func DocFreqTerm(word string) map[int64]int {
+	wordFreqMap := make(map[int64]int)
+	fmt.Println("words ", word)
+	// fmt.Println(GetWordId("comput"))
 	err := wordDb.View(func(tx *bolt.Tx) error {
-
 		wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
-		value := wordFreqBucket.Get(idToByte)
-		length = len(value) / 2
+
+		// for _, word := range words {
+
+		w := GetWordId(word)
+		if w != 0 { // not found
+			fmt.Println(IntToByte(w))
+			value := wordFreqBucket.Get(IntToByte(w))
+			stringValue := ByteToString(value)
+			fmt.Println(stringValue)
+			fmt.Println(len(stringValue))
+			for i := 0; i < len(stringValue); i++ {
+				res := strings.Split(stringValue[i], " ")
+				p, _ := (strconv.Atoi(res[0]))
+				pageID := int64(p)
+				freq, _ := strconv.Atoi(res[1])
+				frequency, ok := wordFreqMap[pageID]
+				if ok {
+					frequency += freq
+				} else {
+					frequency = freq
+				}
+				wordFreqMap[pageID] = frequency
+			}
+		} else {
+			fmt.Println("Word not found")
+		}
+
+		// }
 
 		return nil
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("asd", length)
-	return length
+	return wordFreqMap
 }
 
 // // InvDocFreq inverse document frequency of term j
@@ -69,27 +115,8 @@ func docFreqTerm(wordID int64) int {
 // 	return int(idf)
 // }
 
-// PageQueryMap create a map with key page id and value word frequency of the terms in query
-func PageQueryMap() {
-	err := wordDb.View(func(tx *bolt.Tx) error {
-
-		wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
-		c := wordFreqBucket.Cursor()
-		for k, v := c.First(); k != nil; k, v = c.Next() {
-			fmt.Println("key: ", GetWord(ByteToInt(k)), "value: ", len(v))
-			// fmt.Println("test ", )
-			break
-		}
-
-		return nil
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 // WordToFreqMap return a map with key pageID and
-// value frequency of terms from the given slice
+// value sum of frequency of terms from the given slice
 func WordToFreqMap(words []string) map[int64]int {
 	wordFreqMap := make(map[int64]int)
 	fmt.Println("words ", words)
