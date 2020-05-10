@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"./crawler"
+	"./database"
 	"./pagerank"
 	"./stopstem"
-  "./database"
 )
 
 // Crawl crawl a given url as its base url,
@@ -40,14 +40,14 @@ func main() {
 
 	pagesMap := Crawl(baseURL) // get the mapping of url --> page struct
 	fmt.Println("Len of map %v", len(pagesMap))
-
+	fmt.Println(time.Now()) // buat ngecek dia brp lama runnya
 
 	pagerank.CalculatePageRank(0.85, &pagesMap)
 
 	// contoh cara ngambil page dari map
-	for _, page := range pagesMap {
-		fmt.Println(page.GetURL(), page.GetPageRank())
-	}
+	// for _, page := range pagesMap {
+	// 	fmt.Println(page.GetURL(), page.GetPageRank())
+	// }
 
 	// mapAwal := pagesMap["https://www.cse.ust.hk/admin/people/staff/"]
 	// fmt.Println(mapAwal.GetTitle())
@@ -61,13 +61,14 @@ func main() {
 	stopstem.InputStopWords()
 	newMap := stopstem.StemThemAll(&pagesMap)
 	fmt.Println(len(newMap))
-  database.OpenAllDb()
-  database.ParseAllPages(newMap)
-  //database.PrintPageIdDb()
-  // for _, page := range newMap {
-  //   fmt.Println("pageGetURL: ", page.GetURL())
-  //   fmt.Println("getParent: ", page.GetParentURL())
-  // }
+	fmt.Println(time.Now()) // buat ngecek dia brp lama runnya
+	database.OpenAllDb()
+	database.ParseAllPages(&newMap)
+	//database.PrintPageIdDb()
+	// for _, page := range newMap {
+	//   fmt.Println("pageGetURL: ", page.GetURL())
+	//   fmt.Println("getParent: ", page.GetParentURL())
+	// }
 	fmt.Println(time.Now())
 	// mapAkhir := newMap["https://www.cse.ust.hk/admin/people/staff/"]
 	// fmt.Println(mapAkhir.GetTitle())
