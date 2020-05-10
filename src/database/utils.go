@@ -79,8 +79,7 @@ func ParseAllPages(pages map[string]*crawler.Page) {
     parseAllInfo(page)
     // fmt.Println("keywords: ", page.GetKeywords())
     parseAllWord(page)
-    PrintWordDb()
+    // PrintWordDb()
 	}
-  PrintWordDb()
 }
 

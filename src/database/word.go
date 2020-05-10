@@ -172,16 +172,20 @@ func updateFreq(pageId int64, word string) {
             fmt.Errorf("Error in wordId, converting keyFreq error: %s", err)
           }
           keyFreq = keyFreq + int64(1)
-          toInsert = append(toInsert, string(strconv.FormatInt(pageId, 10) + " " + strconv.FormatInt(keyFreq, 10) + " "))
+          toInsert = append(toInsert, string(strconv.FormatInt(pageId, 10) + " " + strconv.FormatInt(keyFreq, 10)))
+          // toInsert = append(toInsert, string("1 12"))
         } else {
-          toInsert = append(toInsert, string(val + " "))
+          toInsert = append(toInsert, string(val))
+          // toInsert = append(toInsert, string(val))
         }
       }
       if entryExist == false {
-        toInsert = append(toInsert, string(strconv.FormatInt(pageId, 10) + " " + strconv.FormatInt(int64(1), 10) + " "))
+        toInsert = append(toInsert, string(strconv.FormatInt(pageId, 10) + " " + strconv.FormatInt(int64(1), 10)))
+        // toInsert = append(toInsert, string("12 1"))
       }
     } else {
-      toInsert = append(toInsert, string(strconv.FormatInt(pageId, 10) + " " + strconv.FormatInt(int64(1), 10) + " "))
+      toInsert = append(toInsert, string(strconv.FormatInt(pageId, 10) + " " + strconv.FormatInt(int64(1), 10)))
+      // toInsert = append(toInsert, string("13 28"))
     }
     err = wordDb.Update(func(tx *bolt.Tx) error {
       wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
@@ -230,7 +234,7 @@ func PrintWordDb() {
     wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
     c := wordFreqBucket.Cursor()
     for k, v := c.First(); k != nil; k, v = c.Next() {
-      fmt.Println("key: ", GetWord(ByteToInt(k)), "value: ", string(v))
+      fmt.Println("key: ", GetWord(ByteToInt(k)), "value: ", ByteToString(v))
     }
 
     return nil
