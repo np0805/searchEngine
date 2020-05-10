@@ -1,11 +1,14 @@
 package database
 
 import (
-  "fmt"
-  "log"
-  "os"
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
 
-  bolt "go.etcd.io/bbolt"
+	"../crawler"
+	bolt "go.etcd.io/bbolt"
 )
 
 var wordDb *bolt.DB
@@ -31,14 +34,9 @@ func openWordDb() {
       return fmt.Errorf("word create second bucket error: %s", err)
     }
 
-    _, err = tx.CreateBucketIfNotExists([]byte(idToWordBuck))
-    if err != nil {
-      return fmt.Errorf("word create third bucket error: %s", err)
-    }
-
     _, err = tx.CreateBucketIfNotExists([]byte(wordFreqBuck))
     if err != nil {
-      return fmt.Errorf("word create fourth bucket error: %s", err)
+      return fmt.Errorf("word create third bucket error: %s", err)
     }
 
     return nil
@@ -71,7 +69,7 @@ func GetWordId(word string) (ret int64) {
   return ret
 }
 
-// TODO given an id int64, return the word string, returns "" if does not exist
+// given an id int64, return the word string, returns "" if does not exist
 func GetWord(id int64) (word string) {
   word = ""
   idToByte := IntToByte(id)
@@ -90,7 +88,7 @@ func GetWord(id int64) (word string) {
   return word
 }
 
-// TODO given a list of words, get all their ids
+// given a list of words, get all their ids
 func GetListOfWordId(words []string) (wordIds []int64) {
   for _, word := range words {
     wordIds = append(wordIds, GetWordId(word))
@@ -125,28 +123,114 @@ func createWordId(word string) (wordId int64) {
   return wordId
 }
 
+// given a pageId int64 and word string, update the frequency table
+func updateFreq(pageId int64, word string) {
+  // ignore empty phrases or spaces
+  if word != " " && word != "" {
+    // check if previous data for the word exists
+    exists := false
+    var value []byte = nil
+    termId := createWordId(word)
+    err := wordDb.View(func(tx *bolt.Tx) error {
+      wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
+      value = wordFreqBucket.Get(IntToByte(termId))
+      if value != nil {
+        exists = true
+      }
+
+      return nil
+    })
+    if err !=nil {
+      log.Fatal(err)
+    }
+
+    // if entry does not exists, add the first entry
+    var toInsert []string
+    if exists {
+      // fmt.Println("exist")
+      // handle updating the entry
+      // first convert the data in the db to a manipulatable format
+      oldStringData := ByteToString(value)
+      // fmt.Println("URL: " + GetPageUrl(pageId) + "pageId: " + string(strconv.FormatInt(pageId, 10)) + "word: " + word + " wordId: " + string(strconv.FormatInt(termId, 10)))
+      // fmt.Println("oldString: ", oldStringData)
+      // check if the entry for this current page exist for this word
+      // if they exist, increment the keyFreq, then append to toInsert
+      // if not, just append immediately
+      entryExist := false
+      for _, val := range oldStringData {
+        pageStat := strings.Split(val, " ")
+        docId, err := strconv.ParseInt(pageStat[0], 10, 64)
+        if err == nil {
+          fmt.Errorf("Error in wordId, converting docId error: %s", err)
+        }
+
+        // check if the pageId entry exist
+        if docId == pageId {
+          entryExist = true
+          keyFreq, err := strconv.ParseInt(pageStat[1], 10, 64)
+          if err == nil {
+            fmt.Errorf("Error in wordId, converting keyFreq error: %s", err)
+          }
+          keyFreq = keyFreq + int64(1)
+          toInsert = append(toInsert, string(strconv.FormatInt(pageId, 10) + " " + strconv.FormatInt(keyFreq, 10) + " "))
+        } else {
+          toInsert = append(toInsert, string(val + " "))
+        }
+      }
+      if entryExist == false {
+        toInsert = append(toInsert, string(strconv.FormatInt(pageId, 10) + " " + strconv.FormatInt(int64(1), 10) + " "))
+      }
+    } else {
+      toInsert = append(toInsert, string(strconv.FormatInt(pageId, 10) + " " + strconv.FormatInt(int64(1), 10) + " "))
+    }
+    err = wordDb.Update(func(tx *bolt.Tx) error {
+      wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
+      // fmt.Println("toInsert: ", toInsert)
+      // fmt.Println("page is: ", strconv.FormatInt(pageId, 10), "word: " , word, "termId: ", termId)
+      err := wordFreqBucket.Put(IntToByte(termId), StringToByte(toInsert))
+      if err != nil {
+        return fmt.Errorf("Error when updating wordFreqBucket: %s", err)
+      }
+
+      return nil
+    })
+    if err != nil {
+      log.Fatal(err)
+    }
+  }
+}
+
 // parses all the words given to the buckets
-func parseAllWord(words []string) {
+func parseAllWord(page *crawler.Page) {
+  pageId := GetPageId(page.GetURL())
+  words := page.GetKeywords()
   // first, we convert each keyword into it's wordId
   for _, word := range words {
     // check if the word is already in the database
     _ = createWordId(word)
+    updateFreq(pageId, word)
   }
 }
 
 func PrintWordDb() {
   err := wordDb.View(func(tx *bolt.Tx) error {
-    fmt.Println("idToWordBucket")
-    idToWordBucket := tx.Bucket([]byte(idToWordBuck))
-    c := idToWordBucket.Cursor()
-    for k, v := c.First(); k != nil; k, v = c.Next() {
-      fmt.Println("key: ", ByteToInt(k), "value: ", string(v))
-    }
+    // fmt.Println("idToWordBucket")
+    // idToWordBucket := tx.Bucket([]byte(idToWordBuck))
+    // c := idToWordBucket.Cursor()
+    // for k, v := c.First(); k != nil; k, v = c.Next() {
+    //   fmt.Println("key: ", ByteToInt(k), "value: ", string(v))
+    // }
 
-    wordToIdBucket := tx.Bucket([]byte(wordToIdBuck))
-    c = wordToIdBucket.Cursor()
+    // wordToIdBucket := tx.Bucket([]byte(wordToIdBuck))
+    // c = wordToIdBucket.Cursor()
+    // for k, v := c.First(); k != nil; k, v = c.Next() {
+    //   fmt.Println("key: ", string(k), "value: ", ByteToInt(v))
+    // }
+
+    wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
+    c := wordFreqBucket.Cursor()
     for k, v := c.First(); k != nil; k, v = c.Next() {
-      fmt.Println("key: ", string(k), "value: ", ByteToInt(v))
+      fmt.Println("key: ", GetWord(ByteToInt(k)), "value: ", string(v))
     }
 
     return nil

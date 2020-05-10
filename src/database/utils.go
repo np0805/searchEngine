@@ -72,13 +72,15 @@ func StringToByte(s []string) []byte {
 // given a map of pages, parse all the parent pages to get their pageId
 func ParseAllPages(pages map[string]*crawler.Page) {
 	for _, page := range pages {
+    fmt.Println("page: ", page.GetTitle())
+    // fmt.Println("keywords: ", page.GetKeywords())
     _ = GetPageId(page.GetURL())
     parseAllChild(page)
     parseAllInfo(page)
-    // fmt.Println("page: ", page.GetTitle())
     // fmt.Println("keywords: ", page.GetKeywords())
-    parseAllWord(page.GetKeywords())
+    parseAllWord(page)
+    PrintWordDb()
 	}
-  fmt.Print("")
+  PrintWordDb()
 }
 
