@@ -1,52 +1,59 @@
 package main
 
 import (
-	"fmt"
-	"time"
+ "fmt"
+ "time"
 
+<<<<<<< HEAD
 	"./crawler"
 	"./pagerank"
 	"./stopstem"
+=======
+ "./crawler"
+ "./database"
+ "./pagerank"
+ "./stopstem"
+>>>>>>> bad68ed0d9ef1466888017ba9105fa9221b191ef
 )
 
 // Crawl crawl a given url as its base url,
 // returning a mapping of url --> page struct
 func Crawl(baseURL string) map[string]*crawler.Page {
-	pagesMap := make(map[string]*crawler.Page)
-	basePage := crawler.Page{
-		URL:          baseURL,
-		Title:        "",
-		LastModified: "",
-		PageSize:     "",
-		Keywords:     make([]string, 0),
-		ParentURL:    nil,
-		ChildrenURL:  make([]string, 0)}
+ pagesMap := make(map[string]*crawler.Page)
+ basePage := crawler.Page{
+  URL:          baseURL,
+  Title:        "",
+  LastModified: "",
+  PageSize:     "",
+  Keywords:     make([]string, 0),
+  ParentURL:    nil,
+  ChildrenURL:  make([]string, 0)}
 
-	basePage.ExtractTitle()
-	basePage.ExtractLastModified()
-	basePage.ExtractWords()
-	basePage.ExtractSize()
-	basePage.ExtractLinks()
-	pagesMap[baseURL] = &basePage
-	basePage.WriteIndexed(&pagesMap)
+ basePage.ExtractTitle()
+ basePage.ExtractLastModified()
+ basePage.ExtractWords()
+ basePage.ExtractSize()
+ basePage.ExtractLinks()
+ pagesMap[baseURL] = &basePage
+ basePage.WriteIndexed(&pagesMap)
 
-	return pagesMap
+ return pagesMap
 }
 
 func main() {
-	const baseURL = "https://www.cse.ust.hk/"
-	fmt.Println(time.Now()) // buat ngecek dia brp lama runnya
+ const baseURL = "https://www.cse.ust.hk/"
+ fmt.Println(time.Now()) // buat ngecek dia brp lama runnya
 
-	pagesMap := Crawl(baseURL) // get the mapping of url --> page struct
-	fmt.Println("Len of map %v", len(pagesMap))
-	fmt.Println(time.Now()) // buat ngecek dia brp lama runnya
+ pagesMap := Crawl(baseURL) // get the mapping of url --> page struct
+ fmt.Println("Len of map %v", len(pagesMap))
+ fmt.Println(time.Now()) // buat ngecek dia brp lama runnya
 
-	pagerank.CalculatePageRank(0.85, &pagesMap)
+ pagerank.CalculatePageRank(0.85, &pagesMap)
 
-	// contoh cara ngambil page dari map
-	// for _, page := range pagesMap {
-	// 	fmt.Println(page.GetURL(), page.GetPageRank())
-	// }
+ // contoh cara ngambil page dari map
+ // for _, page := range pagesMap {
+ //  fmt.Println(page.GetURL(), page.GetPageRank())
+ // }
 
 	// mapAwal := pagesMap["https://www.cse.ust.hk/admin/people/staff/"]
 	// fmt.Println(mapAwal.GetTitle())
