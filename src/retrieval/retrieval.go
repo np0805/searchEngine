@@ -1,0 +1,39 @@
+package retrieval
+
+import (
+	"fmt"
+	"strings"
+
+	"../database"
+	"../pagerank"
+	"../stopstem"
+)
+
+// RetrievalFunction return a map of page id and similarity score given a query
+// 							BELOM KELAR
+func RetrievalFunction(query string) map[int64]float64 {
+	pageScoreMap := make(map[int64]float64)
+	querySlice := make([]string, 0)
+	splitQuery := strings.Split(query, " ")
+	for _, q := range splitQuery {
+		querySlice = append(querySlice, q)
+	}
+	queryLength := float64(len(querySlice))
+	fmt.Println("lengt", queryLength)
+	queryStem := stopstem.StemString(querySlice)
+	wordMap := database.WordToWeightMap(queryStem)
+	if len(wordMap) == 0 {
+		fmt.Println("No result for search using this query")
+		return nil
+	}
+
+	// fmt.Println(wordMap)
+	for k, v := range wordMap {
+		//BELOM KELAR
+		// get the length of keywords through k
+		_, titleScore := database.TitleMatch(queryStem, k) // check for a match in the title and give boost in ranking
+		cossim := pagerank.CosSim(queryLength, v, 1.0)
+		pageScoreMap[k] = cossim + titleScore
+	}
+	return pageScoreMap
+}

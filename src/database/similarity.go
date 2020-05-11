@@ -7,16 +7,50 @@ import (
 	"strconv"
 	"strings"
 
+	"../stopstem"
+
 	bolt "go.etcd.io/bbolt"
 )
 
 // N total number of documents in the database
 const N = 540
 
-// TitleMatch cek if the given word matches any in the title
-func TitleMatch(word string, pageID int64) bool {
+// GetTitle get a title given a page id
+func GetTitle(pageID int64) string {
+	var title string
+	pageInfo.View(func(tx *bolt.Tx) error {
+		pageInfoBucket := tx.Bucket([]byte(pageInfoBuck))
+		value := pageInfoBucket.Get(IntToByte(pageID))
+		stringvalue := ByteToString(value)
+		title = stringvalue[0]
+		return nil
+	})
+	return title
+}
 
-	return true
+// TitleMatch cek if a given word match the title
+func TitleMatch(word []string, pageID int64) (ok bool, score float64) {
+	ok = false
+	score = 0.0
+
+	for _, w := range word {
+		title := GetTitle(pageID)
+		splitTitle := strings.Split(title, " ")
+		titleSlice := make([]string, 0)
+		for _, q := range splitTitle {
+			titleSlice = append(titleSlice, q)
+		}
+		titleStem := stopstem.StemString(titleSlice)
+		for _, t := range titleStem {
+			if w == t {
+				ok = true
+				score++
+				// fmt.Println(w, "match in ", pageID)
+			}
+		}
+
+	}
+	return ok, score
 }
 
 func PrintTest() {
@@ -115,10 +149,10 @@ func DocFreqTerm(word string) map[int64]float64 {
 	return wordFreqMap
 }
 
-// WordToFreqMap return a map with key pageID and
-// value sum of frequency of terms from the given slice
-func WordToFreqMap(words []string) map[int64]float64 {
-	wordFreqMap := make(map[int64]float64)
+// WordToWeightMap return a map with key pageID and
+// value tf*idf of terms from the given slice
+func WordToWeightMap(words []string) map[int64]float64 {
+	wordWeightMap := make(map[int64]float64)
 	fmt.Println("words ", words)
 	// fmt.Println(GetWordId("comput"))
 	err := wordDb.View(func(tx *bolt.Tx) error {
@@ -131,11 +165,11 @@ func WordToFreqMap(words []string) map[int64]float64 {
 				fmt.Println("Word not found")
 				continue
 			}
-			fmt.Println(IntToByte(w))
+			// fmt.Println(IntToByte(w))
 			value := wordFreqBucket.Get(IntToByte(w))
 			stringValue := ByteToString(value)
-			fmt.Println(stringValue)
-			fmt.Println(len(stringValue))
+			// fmt.Println(stringValue)
+			// fmt.Println(len(stringValue))
 			df := len(stringValue)
 			idf := idf(df, N)
 			fmt.Println("idf of ", word, " is ", idf)
@@ -146,13 +180,13 @@ func WordToFreqMap(words []string) map[int64]float64 {
 				f, _ := strconv.Atoi(res[1]) // get the frequency
 				freq := float64(f)
 				tfidf := freq * idf
-				frequency, ok := wordFreqMap[pageID]
+				frequency, ok := wordWeightMap[pageID]
 				if ok {
 					frequency += tfidf
 				} else {
 					frequency = tfidf
 				}
-				wordFreqMap[pageID] = frequency
+				wordWeightMap[pageID] = frequency
 			}
 		}
 
@@ -161,5 +195,5 @@ func WordToFreqMap(words []string) map[int64]float64 {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return wordFreqMap
+	return wordWeightMap
 }

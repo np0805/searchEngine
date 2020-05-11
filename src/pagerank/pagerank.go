@@ -33,3 +33,8 @@ func CalculatePageRank(d float64, pages *map[string]*crawler.Page) {
 		}
 	}
 }
+
+// CosSim compute the cosine similarity report for a particular document
+func CosSim(queryLength, tfidf, docLength float64) float64 {
+	return tfidf / (docLength * queryLength)
+}

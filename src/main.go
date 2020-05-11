@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"./crawler"
-	"./database"
 	"./pagerank"
 	"./stopstem"
 )
@@ -62,8 +61,10 @@ func main() {
 	newMap := stopstem.StemThemAll(&pagesMap)
 	fmt.Println(len(newMap))
 	fmt.Println(time.Now()) // buat ngecek dia brp lama runnya
-	database.OpenAllDb()
-	database.ParseAllPages(&newMap)
+
+	// database.OpenAllDb()
+	// database.ParseAllPages(&newMap)
+
 	//database.PrintPageIdDb()
 	// for _, page := range newMap {
 	//   fmt.Println("pageGetURL: ", page.GetURL())
