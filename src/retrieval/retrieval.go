@@ -2,6 +2,7 @@ package retrieval
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"../database"
@@ -18,7 +19,7 @@ func RetrievalFunction(query string) map[int64]float64 {
 	for _, q := range splitQuery {
 		querySlice = append(querySlice, q)
 	}
-	queryLength := float64(len(querySlice))
+	queryLength := math.Sqrt(float64(len(querySlice)))
 	fmt.Println("lengt", queryLength)
 	queryStem := stopstem.StemString(querySlice)
 	wordMap := database.WordToWeightMap(queryStem)
@@ -31,7 +32,8 @@ func RetrievalFunction(query string) map[int64]float64 {
 	for k, v := range wordMap {
 		//BELOM KELAR
 		// get the length of keywords through k
-		_, titleScore := database.TitleMatch(queryStem, k) // check for a match in the title and give boost in ranking
+		// get the pagerank calculation from the db
+		_, titleScore := pagerank.TitleMatch(queryStem, k) // check for a match in the title and give boost in ranking
 		cossim := pagerank.CosSim(queryLength, v, 1.0)
 		pageScoreMap[k] = cossim + titleScore
 	}

@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"../stopstem"
-
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -28,31 +26,6 @@ func GetTitle(pageID int64) string {
 	return title
 }
 
-// TitleMatch cek if a given word match the title
-func TitleMatch(word []string, pageID int64) (ok bool, score float64) {
-	ok = false
-	score = 0.0
-
-	for _, w := range word {
-		title := GetTitle(pageID)
-		splitTitle := strings.Split(title, " ")
-		titleSlice := make([]string, 0)
-		for _, q := range splitTitle {
-			titleSlice = append(titleSlice, q)
-		}
-		titleStem := stopstem.StemString(titleSlice)
-		for _, t := range titleStem {
-			if w == t {
-				ok = true
-				score++
-				// fmt.Println(w, "match in ", pageID)
-			}
-		}
-
-	}
-	return ok, score
-}
-
 func PrintTest() {
 	pageInfo.View(func(tx *bolt.Tx) error {
 		pageInfoBucket := tx.Bucket([]byte(pageInfoBuck))
@@ -66,32 +39,6 @@ func PrintTest() {
 		}
 		return nil
 	})
-}
-
-// TermFreq frequency of term j in document i
-func TermFreq(wordID int64, pageID int) int {
-	idToByte := IntToByte(wordID)
-	frequency := 0
-	err := wordDb.View(func(tx *bolt.Tx) error {
-
-		wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
-		value := wordFreqBucket.Get(idToByte)
-		// fmt.Println("key: ", wordID, "value: ", value)
-		for i := 0; i < len(value); i++ {
-			if i%2 == 0 {
-				// fmt.Println(value[i])
-				if int(value[i]) == pageID {
-					frequency = int(value[i+1])
-					break
-				}
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	return frequency
 }
 
 //idf calculate inverse document frequency of a term

@@ -2,8 +2,11 @@ package pagerank
 
 import (
 	"math"
+	"strings"
 
 	"../crawler"
+	"../database"
+	"../stopstem"
 )
 
 // CalculatePageRank given a damping factor and map of pages, calculate the ranks recursively
@@ -37,4 +40,30 @@ func CalculatePageRank(d float64, pages *map[string]*crawler.Page) {
 // CosSim compute the cosine similarity report for a particular document
 func CosSim(queryLength, tfidf, docLength float64) float64 {
 	return tfidf / (docLength * queryLength)
+}
+
+// TitleMatch cek if a given word match the title
+func TitleMatch(word []string, pageID int64) (ok bool, queryScore float64) {
+	ok = false
+	queryScore = 0.0
+
+	for _, w := range word {
+		wordScore := 0.0
+		title := database.GetTitle(pageID)
+		splitTitle := strings.Split(title, " ")
+		titleSlice := make([]string, 0)
+		for _, q := range splitTitle {
+			titleSlice = append(titleSlice, q)
+		}
+		titleStem := stopstem.StemString(titleSlice)
+		for _, t := range titleStem {
+			if w == t {
+				ok = true
+				wordScore++
+				// fmt.Println(w, "match in ", pageID)
+			}
+		}
+		queryScore += wordScore
+	}
+	return ok, queryScore
 }
