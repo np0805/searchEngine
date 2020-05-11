@@ -3,16 +3,15 @@ package database
 import (
 	"fmt"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 
 	bolt "go.etcd.io/bbolt"
 )
 
-// InnerProduct calculate the similarity of the page with the query
-func InnerProduct(pageID int64, words []string) (sim float64) {
-	return 6.0
-}
+// N total number of documents in the database
+const N = 540
 
 // TitleMatch cek if the given word matches any in the title
 func TitleMatch(word string, pageID int64) bool {
@@ -61,9 +60,14 @@ func TermFreq(wordID int64, pageID int) int {
 	return frequency
 }
 
+//idf calculate inverse document frequency of a term
+func idf(df int, N float64) float64 {
+	return math.Log2(N / float64(df))
+}
+
 // DocFreqTerm get document frequency of 1 term j
-func DocFreqTerm(word string) map[int64]int {
-	wordFreqMap := make(map[int64]int)
+func DocFreqTerm(word string) map[int64]float64 {
+	wordFreqMap := make(map[int64]float64)
 	fmt.Println("words ", word)
 	// fmt.Println(GetWordId("comput"))
 	err := wordDb.View(func(tx *bolt.Tx) error {
@@ -78,23 +82,29 @@ func DocFreqTerm(word string) map[int64]int {
 			stringValue := ByteToString(value)
 			fmt.Println(stringValue)
 			fmt.Println(len(stringValue))
+
+			df := len(stringValue)
+			idf := idf(df, N)
+			fmt.Println("idf of ", word, " is ", idf)
+
 			for i := 0; i < len(stringValue); i++ {
 				res := strings.Split(stringValue[i], " ")
 				p, _ := (strconv.Atoi(res[0]))
 				pageID := int64(p)
-				freq, _ := strconv.Atoi(res[1])
+				f, _ := strconv.Atoi(res[1]) // get the frequency
+				freq := float64(f)
+				tfidf := freq * idf
 				frequency, ok := wordFreqMap[pageID]
 				if ok {
-					frequency += freq
+					frequency += tfidf
 				} else {
-					frequency = freq
+					frequency = tfidf
 				}
 				wordFreqMap[pageID] = frequency
 			}
 		} else {
 			fmt.Println("Word not found")
 		}
-
 		// }
 
 		return nil
@@ -105,20 +115,10 @@ func DocFreqTerm(word string) map[int64]int {
 	return wordFreqMap
 }
 
-// // InvDocFreq inverse document frequency of term j
-// func InvDocFreq(wordID int64) int {
-// 	df := docFreqTerm(wordID)
-// 	length := GetDbLength()
-// 	fmt.Println("www", length)
-// 	k := float64(length / df)
-// 	idf := math.Log2(k)
-// 	return int(idf)
-// }
-
 // WordToFreqMap return a map with key pageID and
 // value sum of frequency of terms from the given slice
-func WordToFreqMap(words []string) map[int64]int {
-	wordFreqMap := make(map[int64]int)
+func WordToFreqMap(words []string) map[int64]float64 {
+	wordFreqMap := make(map[int64]float64)
 	fmt.Println("words ", words)
 	// fmt.Println(GetWordId("comput"))
 	err := wordDb.View(func(tx *bolt.Tx) error {
@@ -136,16 +136,21 @@ func WordToFreqMap(words []string) map[int64]int {
 			stringValue := ByteToString(value)
 			fmt.Println(stringValue)
 			fmt.Println(len(stringValue))
+			df := len(stringValue)
+			idf := idf(df, N)
+			fmt.Println("idf of ", word, " is ", idf)
 			for i := 0; i < len(stringValue); i++ {
 				res := strings.Split(stringValue[i], " ")
-				p, _ := (strconv.Atoi(res[0]))
+				p, _ := (strconv.Atoi(res[0])) // get the page id
 				pageID := int64(p)
-				freq, _ := strconv.Atoi(res[1])
+				f, _ := strconv.Atoi(res[1]) // get the frequency
+				freq := float64(f)
+				tfidf := freq * idf
 				frequency, ok := wordFreqMap[pageID]
 				if ok {
-					frequency += freq
+					frequency += tfidf
 				} else {
-					frequency = freq
+					frequency = tfidf
 				}
 				wordFreqMap[pageID] = frequency
 			}
