@@ -44,8 +44,6 @@ func main() {
 
 	pagerank.CalculatePageRank(0.85, &pagesMap)
 
-	pagerank.CalculatePageRank(0.85, &pagesMap)
-
 	// contoh cara ngambil page dari map
 	// for _, page := range pagesMap {
 	// 	fmt.Println(page.GetURL(), page.GetPageRank())
