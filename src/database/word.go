@@ -310,7 +310,7 @@ func GetTopWords(id int64) []string {
 	} else {
 		return nil
 	}
-	return ret
+	return topWords
 }
 
 // parses all the words given to the buckets
