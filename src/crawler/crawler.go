@@ -19,6 +19,7 @@ type Page struct {
 	Title        string
 	LastModified string
 	PageSize     string
+	pageRank     float64
 	Keywords     []string
 	ParentURL    []string
 	ChildrenURL  []string
@@ -57,6 +58,16 @@ func (page *Page) GetChildrenURL() []string {
 // GetParentURL return url of its parents
 func (page *Page) GetParentURL() []string {
 	return page.ParentURL
+}
+
+// GetPageRank return page rank
+func (page *Page) GetPageRank() float64 {
+	return page.pageRank
+}
+
+// SetRank sets the calling page with the given rank
+func (page *Page) SetRank(rank float64) {
+	page.pageRank = rank
 }
 
 // ExtractTitle extract the title from a given page
@@ -259,7 +270,7 @@ func (page *Page) MakeLessChildren(pages *map[string]*Page) {
 		// if strings.Index(url, "https://www.cse.ust.hk/") == 0 {
 		childPage, ok := (*pages)[url]
 		if !ok {
-			childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0), make([]string, 0)}
+			childPage := Page{url, "", "", "", 1, make([]string, 0), make([]string, 0), make([]string, 0)}
 			childPage.ExtractTitle()
 			if childPage.GetTitle() == "" {
 				continue
@@ -280,7 +291,7 @@ func (page *Page) MakeLessChildren(pages *map[string]*Page) {
 				childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
 			}
 		}
-		if i==30 {
+		if i == 30 {
 			break
 		}
 	}
@@ -293,7 +304,7 @@ func (page *Page) MakeChildren(pages *map[string]*Page) {
 		// if strings.Index(url, "https://www.cse.ust.hk/") == 0 {
 		childPage, ok := (*pages)[url]
 		if !ok {
-			childPage := Page{url, "", "", "", make([]string, 0), make([]string, 0), make([]string, 0)}
+			childPage := Page{url, "", "", "", 1, make([]string, 0), make([]string, 0), make([]string, 0)}
 			childPage.ExtractTitle()
 			if childPage.GetTitle() == "" {
 				continue
@@ -329,7 +340,7 @@ func (page *Page) WriteIndexed(pages *map[string]*Page) {
 	}
 	head := ""
 	// head := "TITLE: " + basePage.GetTitle() + "\n" + basePage.GetURL() + "\n" + "DATE: " + basePage.GetLastModified() + ", " + basePage.GetSize() + "\n" + strings.Join(basePage.GetKeywords(), " ") + "\n" + strings.Join(basePage.GetChildrenURL(), "\n") + "\n"
-	basePage.MakeLessChildren(pages)
+	basePage.MakeChildren(pages)
 
 	for _, child := range *pages {
 		children := "----------------------------------------------\n" + "TITLE: " + child.GetTitle() + "\n" + child.GetURL() + "\n" + "DATE: " + child.GetLastModified() + ", " + child.GetSize() + "\n" + strings.Join(child.GetKeywords(), " ") + "\n" + strings.Join(child.GetChildrenURL(), "\n") + "\n"
