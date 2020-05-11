@@ -41,6 +41,17 @@ func CheckStopWords(s string) bool {
 	return stopWordsBool[s]
 }
 
+//StemString function to stem each word of the input
+func StemString(slices []string) []string {
+	var result []string
+	for _, word := range slices {
+		word = strings.ToLower(word)
+		word = porterstemmer.StemString(word)
+		result = append(result, word)
+	}
+	return result
+}
+
 //StemThemAll function to remove the unneccessary words
 func StemThemAll(pages *map[string]*crawler.Page) map[string]*crawler.Page {
 	//create a new map for the return
