@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"./crawler"
+	"./database"
 	"./pagerank"
 	"./stopstem"
 )
@@ -52,24 +53,22 @@ func main() {
 	// fmt.Println(mapAwal.GetTitle())
 	// fmt.Println(mapAwal.GetKeywords())
 	/*
-		contoh cara lain buat ngambil page dari map
-		another := pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"]
-		fmt.Println(another.GetTitle())
+	  contoh cara lain buat ngambil page dari map
+	  another := pagesMap["http://epublish.ust.hk/cgi-bin/eng/story.php?id=96&catid=97&keycode=88b7aae0ae45ddb0e6e000ee2682721a&token=17b43a00aeb0f8f8f08df16ae664909f"]
+	  fmt.Println(another.GetTitle())
 	*/
 	fmt.Println("-------------------------------------------------------")
 	stopstem.InputStopWords()
 	newMap := stopstem.StemThemAll(&pagesMap)
 	fmt.Println(len(newMap))
 	fmt.Println(time.Now()) // buat ngecek dia brp lama runnya
-
-	// database.OpenAllDb()
-	// database.ParseAllPages(&newMap)
-
+	for _, page := range newMap {
+		fmt.Println("pageGetURL: ", page.GetURL())
+		fmt.Println("getPageRank: ", page.GetPageRank())
+	}
+	database.OpenAllDb()
+	database.ParseAllPages(&newMap)
 	//database.PrintPageIdDb()
-	// for _, page := range newMap {
-	//   fmt.Println("pageGetURL: ", page.GetURL())
-	//   fmt.Println("getParent: ", page.GetParentURL())
-	// }
 	fmt.Println(time.Now())
 	// mapAkhir := newMap["https://www.cse.ust.hk/admin/people/staff/"]
 	// fmt.Println(mapAkhir.GetTitle())

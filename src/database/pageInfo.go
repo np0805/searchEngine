@@ -14,6 +14,7 @@ var pageInfo *bolt.DB
 var pageInfoBuck string = "pageInfoBuck"
 var parentChildBuck string = "parentChildBuck"
 var childParentBuck string = "childParentBuck"
+var pageRankBuck string = "pageRankBuck"
 
 func openPageInfoDb() {
   var err error
@@ -37,6 +38,11 @@ func openPageInfoDb() {
     _, err = tx.CreateBucketIfNotExists([]byte(childParentBuck))
     if err != nil {
       return fmt.Errorf("pageInfo create third bucket: %s", err)
+    }
+
+    _, err = tx.CreateBucketIfNotExists([]byte(pageRankBuck))
+    if err != nil {
+      return fmt.Errorf("pageInfo create fourth bucket: %s", err)
     }
 
     return nil
@@ -123,6 +129,17 @@ func parseAllInfo(page *crawler.Page) {
   if err != nil {
     log.Fatal(err)
   }
+
+  err = pageInfo.Update(func(tx *bolt.Tx) error {
+    pageRankBucket := tx.Bucket([]byte(pageRankBuck))
+    fmt.Println("Page rank: ", page.GetPageRank())
+    pageRankBucket.Put(IntToByte(GetPageId(page.GetURL())), Float64ToBytes(page.GetPageRank()))
+
+    return nil
+  })
+  if err != nil {
+    log.Fatal(err)
+  }
 }
 
 // given a page url, return the child []string
@@ -197,6 +214,14 @@ func PrintPageInfoDb() {
       if v != nil {
         fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
       }
+    }
+
+    fmt.Println("pageRankBucket")
+    pageRankBucket := tx.Bucket([]byte(pageRankBuck))
+    c = pageRankBucket.Cursor()
+
+    for k, v := c.First(); k != nil; k, v = c.Next() {
+      fmt.Println("key: ", ByteToInt(k), "value: ", ByteToFloat64(v))
     }
 
     return nil
