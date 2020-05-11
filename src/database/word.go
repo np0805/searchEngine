@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -175,7 +176,7 @@ func updateFreq(pageId int64, word string) {
 			for _, val := range oldStringData {
 				pageStat := strings.Split(val, " ")
 				docId, err := strconv.ParseInt(pageStat[0], 10, 64)
-				if err == nil {
+				if err != nil {
 					fmt.Errorf("Error in wordId, converting docId error: %s", err)
 				}
 
@@ -183,7 +184,7 @@ func updateFreq(pageId int64, word string) {
 				if docId == pageId {
 					entryExist = true
 					keyFreq, err := strconv.ParseInt(pageStat[1], 10, 64)
-					if err == nil {
+					if err != nil {
 						fmt.Errorf("Error in wordId, converting keyFreq error: %s", err)
 					}
 					keyFreq = keyFreq + int64(1)
@@ -213,7 +214,7 @@ func updateFreq(pageId int64, word string) {
         // wordStats[0] will be wordId wordStats[1] will be frequency
         wordStats := strings.Split(val, " ")
         wordId, err := strconv.ParseInt(wordStats[0], 10, 64)
-        if err == nil {
+        if err != nil {
           fmt.Errorf("Error in wordId, converting wordId error: %s", err)
         }
 
@@ -221,7 +222,7 @@ func updateFreq(pageId int64, word string) {
         if termId == wordId {
           wordExists = true
           wordFreq, err := strconv.ParseInt(wordStats[1], 10, 64)
-          if err == nil {
+          if err != nil {
             fmt.Errorf("Error in wordId, converting wordFreq error: %s", err)
           }
           wordFreq = wordFreq + int64(1)
@@ -259,6 +260,56 @@ func updateFreq(pageId int64, word string) {
 			log.Fatal(err)
 		}
 	}
+}
+
+func GetTopWords(id int64) []string {
+  exist := true
+  var value []byte
+  var ret []string
+  var topWords []string
+  err := wordDb.View(func(tx *bolt.Tx) error {
+    pageWordFreqBucket := tx.Bucket([]byte(pageWordFreqBuck))
+    value = pageWordFreqBucket.Get(IntToByte(id))
+    if value == nil {
+      exist = false
+    }
+
+    return nil
+  })
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  var a [][2]int64
+  if exist == true {
+    ret = ByteToString(value)
+    for _, val := range ret {
+      test := strings.Split(val, " ")
+      keyId, err := strconv.ParseInt(test[0], 10, 64)
+      if err != nil {
+        fmt.Errorf("Error in wordId, converting keyId: %s", err)
+      }
+      freq, err := strconv.ParseInt(test[1], 10, 64)
+      if err != nil {
+        fmt.Errorf("Error in wordId, converting keyId: %s", err)
+      }
+      var tes [2]int64
+      tes[0] = keyId
+      tes[1] = freq
+      a = append(a, tes)
+    }
+    sort.Slice(a, func(i, j int) bool {
+      return a[i][1] > a[j][1]
+    })
+    // now a is sorted
+    // get the top 5
+    for i:= 0; i < 5; i++ {
+      topWords = append(topWords, string(GetWord(a[i][0]) + ": " + strconv.FormatInt(a[i][1], 10)))
+    }
+  } else {
+    return nil
+  }
+  return ret
 }
 
 // parses all the words given to the buckets

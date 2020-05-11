@@ -132,7 +132,6 @@ func parseAllInfo(page *crawler.Page) {
 
   err = pageInfo.Update(func(tx *bolt.Tx) error {
     pageRankBucket := tx.Bucket([]byte(pageRankBuck))
-    fmt.Println("Page rank: ", page.GetPageRank())
     pageRankBucket.Put(IntToByte(GetPageId(page.GetURL())), Float64ToBytes(page.GetPageRank()))
 
     return nil
