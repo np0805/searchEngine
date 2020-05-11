@@ -3,25 +3,15 @@ package database
 import (
 	"fmt"
 	"log"
-<<<<<<< HEAD
 	"math"
-=======
->>>>>>> 04196080dc6691bfb1ca09edc51eeefff8c9e9b1
 	"strconv"
 	"strings"
 
 	bolt "go.etcd.io/bbolt"
 )
 
-<<<<<<< HEAD
 // N total number of documents in the database
 const N = 540
-=======
-// InnerProduct calculate the similarity of the page with the query
-func InnerProduct(pageID int64, words []string) (sim float64) {
-	return 6.0
-}
->>>>>>> 04196080dc6691bfb1ca09edc51eeefff8c9e9b1
 
 // TitleMatch cek if the given word matches any in the title
 func TitleMatch(word string, pageID int64) bool {
