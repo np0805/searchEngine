@@ -109,6 +109,24 @@ func GetPageId(url string) (id int64) {
   return
 }
 
+// return number of pages in the pageIdDb, if empty, return 0
+func GetPageNumber() (ret int64) {
+  ret = int64(0)
+  err := pageId.View(func(tx *bolt.Tx) error {
+    pageToId := tx.Bucket([]byte(pageToIdBuck))
+    value := pageToId.Get(IntToByte(int64(0)))
+    if value != nil {
+      ret = ByteToInt(value)
+    }
+
+    return nil
+  })
+  if err != nil {
+    log.Fatal(err)
+  }
+  return ret
+}
+
 func GetPageUrl(id int64) (url string) {
   var value []byte
   pageId.View(func(tx *bolt.Tx) error {
