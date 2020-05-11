@@ -25,19 +25,37 @@ func GetTitle(pageID int64) string {
 
 // PrintTest test aja
 func PrintTest() {
-	err := wordDb.View(func(tx *bolt.Tx) error {
+	pageInfo.View(func(tx *bolt.Tx) error {
+		pageInfoBucket := tx.Bucket([]byte(pageInfoBuck))
+		c := pageInfoBucket.Cursor()
 
-		wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
-		c := wordFreqBucket.Cursor()
+		fmt.Println("pageInfoBucket")
 		for k, v := c.First(); k != nil; k, v = c.Next() {
-			fmt.Println("key: ", GetWord(ByteToInt(k)), "value: ", ByteToString(v)[0])
+			if v != nil {
+				value := ByteToString(v)
+				fmt.Println("key: ", ByteToInt(k), "value: ", value)
+			}
 			break
 		}
+
 		return nil
 	})
-	if err != nil {
-		log.Fatal(err)
-	}
+}
+
+// ExtractPageInfo get the info from pageinfo bucket
+func ExtractPageInfo(pageID int64) (title, url, lastmodified, size string) {
+	pageInfo.View(func(tx *bolt.Tx) error {
+		pageInfoBucket := tx.Bucket([]byte(pageInfoBuck))
+		value := pageInfoBucket.Get(IntToByte(pageID))
+		v := ByteToString(value)
+		title = v[0]
+		url = v[1]
+		lastmodified = v[2]
+		size = v[3]
+
+		return nil
+	})
+	return title, url, lastmodified, size
 }
 
 // GetLinkRank get the computed link-based page rank of a given pageid

@@ -13,11 +13,11 @@ func main() {
 	fmt.Println(time.Now())
 	r := retrieval.RetrievalFunction("love compare automatic")
 	fmt.Println(time.Now())
-	// fmt.Println(r)
 	for k, v := range r {
-		fmt.Println("key ", k, "value", *v)
-
+		fmt.Println("key ", k, "value", v.GetTitle())
 	}
+	fmt.Println("-------------")
+	fmt.Println(database.ExtractPageInfo(2))
 	// database.PrintTest()
 	// fmt.Println(database.DocLength(2))
 	// fmt.Println("-------------")

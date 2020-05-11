@@ -13,8 +13,12 @@ import (
 
 // PageScore struct
 type PageScore struct {
-	id    int64
-	score float64
+	id           int64
+	score        float64
+	title        string
+	url          string
+	lastModified string
+	pageSize     string
 }
 
 // GetID return id of page
@@ -22,9 +26,29 @@ func (page *PageScore) GetID() int64 {
 	return page.id
 }
 
-// GetScore return url of page
+// GetScore return score of page
 func (page *PageScore) GetScore() float64 {
 	return page.score
+}
+
+// GetTitle return id of page
+func (page *PageScore) GetTitle() string {
+	return page.title
+}
+
+// GetURL return url of page
+func (page *PageScore) GetURL() string {
+	return page.url
+}
+
+// GetLastModified return modified date of page
+func (page *PageScore) GetLastModified() string {
+	return page.lastModified
+}
+
+// GetSize return size of page
+func (page *PageScore) GetSize() string {
+	return page.pageSize
 }
 
 // RetrievalFunction return a map of page id and similarity score given a query
@@ -53,9 +77,14 @@ func RetrievalFunction(query string) []*PageScore {
 		_, titleScore := pagerank.TitleMatch(queryStem, k) // check for a match in the title and give boost in ranking
 		cossim := pagerank.CosSim(queryLength, v, docLength)
 		linkrank := database.GetLinkRank(k)
+		title, url, lastmodified, size := database.ExtractPageInfo(k)
 		pageScore := PageScore{
-			id:    k,
-			score: cossim + titleScore + linkrank}
+			id:           k,
+			score:        cossim + titleScore + linkrank,
+			title:        title,
+			url:          url,
+			lastModified: lastmodified,
+			pageSize:     size}
 
 		pagesScores = append(pagesScores, &pageScore)
 		// pageScoreMap[k] = cossim + titleScore + linkrank
