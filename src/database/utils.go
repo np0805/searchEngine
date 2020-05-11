@@ -3,6 +3,7 @@ package database
 import (
 	"encoding/binary"
 	"fmt"
+  "math"
 
 	"../crawler"
 )
@@ -18,6 +19,19 @@ func OpenAllDb() {
 func CloseAllDb() {
 	closePageIdDb()
 	closePageInfoDb()
+}
+
+func ByteToFloat64(bytes []byte) float64 {
+    bits := binary.LittleEndian.Uint64(bytes)
+    float := math.Float64frombits(bits)
+    return float
+}
+
+func Float64ToBytes(float float64) []byte {
+    bits := math.Float64bits(float)
+    bytes := make([]byte, 8)
+    binary.LittleEndian.PutUint64(bytes, bits)
+    return bytes
 }
 
 func IntToByte(i int64) []byte {
@@ -80,6 +94,7 @@ func ParseAllPages(pages *map[string]*crawler.Page) {
 		parseAllChild(page)
 		parseAllInfo(page)
 		// fmt.Println("keywords: ", page.GetKeywords())
+    PrintPageInfoDb()
 		parseAllWord(page)
 		// PrintWordDb()
     // fmt.Println(GetPageKeyFreq(page.GetURL()))

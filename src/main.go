@@ -62,13 +62,13 @@ func main() {
  newMap := stopstem.StemThemAll(&pagesMap)
  fmt.Println(len(newMap))
  fmt.Println(time.Now()) // buat ngecek dia brp lama runnya
+ for _, page := range newMap {
+   fmt.Println("pageGetURL: ", page.GetURL())
+   fmt.Println("getPageRank: ", page.GetPageRank())
+ }
  database.OpenAllDb()
  database.ParseAllPages(&newMap)
  //database.PrintPageIdDb()
- // for _, page := range newMap {
- //   fmt.Println("pageGetURL: ", page.GetURL())
- //   fmt.Println("getParent: ", page.GetParentURL())
- // }
  fmt.Println(time.Now())
  // mapAkhir := newMap["https://www.cse.ust.hk/admin/people/staff/"]
  // fmt.Println(mapAkhir.GetTitle())
