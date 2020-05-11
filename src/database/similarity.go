@@ -48,9 +48,6 @@ func GetLinkRank(pageID int64) (rank float64) {
 		pageRankBucket := tx.Bucket([]byte(pageRankBuck))
 		value := pageRankBucket.Get(IntToByte(pageID))
 		rank = ByteToFloat64(value)
-		// if value != nil {
-		// 	fmt.Println("awas")
-		// }
 		return nil
 	})
 	// fmt.Println("err ", err)
