@@ -21,7 +21,7 @@
 # Project testing folder
 dummy/*
 assets/spider_result.txt
-assets/spider_result_stemmed.txt
+assets/spider_result_stem.txt
 
 ### macOS ###
 # General
