@@ -20,7 +20,7 @@ func RetrievalFunction(query string) map[int64]float64 {
 		querySlice = append(querySlice, q)
 	}
 	queryLength := math.Sqrt(float64(len(querySlice)))
-	fmt.Println("lengt", queryLength)
+	fmt.Println("length", queryLength)
 	queryStem := stopstem.StemString(querySlice)
 	wordMap := database.WordToWeightMap(queryStem)
 	if len(wordMap) == 0 {
@@ -29,13 +29,21 @@ func RetrievalFunction(query string) map[int64]float64 {
 	}
 
 	// fmt.Println(wordMap)
+	// i := 0
 	for k, v := range wordMap {
 		//BELOM KELAR
 		// get the length of keywords through k
 		// get the pagerank calculation from the db
 		_, titleScore := pagerank.TitleMatch(queryStem, k) // check for a match in the title and give boost in ranking
 		cossim := pagerank.CosSim(queryLength, v, 1.0)
-		pageScoreMap[k] = cossim + titleScore
+		linkrank := database.GetLinkRank(k)
+
+		pageScoreMap[k] = cossim + titleScore + linkrank
 	}
 	return pageScoreMap
+}
+
+// SortMap sort the pagemap by its rank
+func SortMap(pageScoreMap *map[int64]float64) {
+
 }

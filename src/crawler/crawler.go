@@ -291,7 +291,7 @@ func (page *Page) MakeLessChildren(pages *map[string]*Page) {
 				childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
 			}
 		}
-		if i == 30 {
+		if i == 5 {
 			break
 		}
 	}
@@ -299,66 +299,66 @@ func (page *Page) MakeLessChildren(pages *map[string]*Page) {
 
 // MakeChildren given a page, create its children page from the page's childrenURL and map it to the given map
 func (page *Page) MakeChildren(pages *map[string]*Page) {
- for _, url := range page.GetChildrenURL() {
-  // check if it is from cse.ust.hk
-  // if strings.Index(url, "https://www.cse.ust.hk/") == 0 {
-  childPage, ok := (*pages)[url]
-  if !ok {
-   childPage := Page{url, "", "", "", 1, make([]string, 0), make([]string, 0), make([]string, 0)}
-   childPage.ExtractTitle()
-   if childPage.GetTitle() == "" {
-    continue
-   }
-   childPage.ExtractLastModified()
-   childPage.ExtractWords()
-   childPage.ExtractSize()
-   childPage.ExtractLinks()
-   childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
-   (*pages)[childPage.URL] = &childPage
-   // Computer recursively
-   childPage.MakeChildren(pages)
-  } else {
-   // Check for circular dependency
-   if childPage.GetURL() == page.GetURL() {
-    // fmt.Println("Yaha kamu ketauan")
-    continue
-   } else {
-    // fmt.Println("eits sudah pernah bro")
-    childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
-   }
-  }
- }
+	for _, url := range page.GetChildrenURL() {
+		// check if it is from cse.ust.hk
+		// if strings.Index(url, "https://www.cse.ust.hk/") == 0 {
+		childPage, ok := (*pages)[url]
+		if !ok {
+			childPage := Page{url, "", "", "", 1, make([]string, 0), make([]string, 0), make([]string, 0)}
+			childPage.ExtractTitle()
+			if childPage.GetTitle() == "" {
+				continue
+			}
+			childPage.ExtractLastModified()
+			childPage.ExtractWords()
+			childPage.ExtractSize()
+			childPage.ExtractLinks()
+			childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
+			(*pages)[childPage.URL] = &childPage
+			// Computer recursively
+			childPage.MakeChildren(pages)
+		} else {
+			// Check for circular dependency
+			if childPage.GetURL() == page.GetURL() {
+				// fmt.Println("Yaha kamu ketauan")
+				continue
+			} else {
+				// fmt.Println("eits sudah pernah bro")
+				childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
+			}
+		}
+	}
 }
 
 // WriteIndexed write the page data into an external file given a page map
 func (page *Page) WriteIndexed(pages *map[string]*Page) {
- basePage := (*pages)[page.GetURL()]
- f, err := os.Create("../assets/spider_result.txt")
- if err != nil {
-  fmt.Println(err)
-  return
- }
- head := ""
- // head := "TITLE: " + basePage.GetTitle() + "\n" + basePage.GetURL() + "\n" + "DATE: " + basePage.GetLastModified() + ", " + basePage.GetSize() + "\n" + strings.Join(basePage.GetKeywords(), " ") + "\n" + strings.Join(basePage.GetChildrenURL(), "\n") + "\n"
- basePage.MakeLessChildren(pages)
+	basePage := (*pages)[page.GetURL()]
+	f, err := os.Create("../assets/spider_result.txt")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	head := ""
+	// head := "TITLE: " + basePage.GetTitle() + "\n" + basePage.GetURL() + "\n" + "DATE: " + basePage.GetLastModified() + ", " + basePage.GetSize() + "\n" + strings.Join(basePage.GetKeywords(), " ") + "\n" + strings.Join(basePage.GetChildrenURL(), "\n") + "\n"
+	basePage.MakeLessChildren(pages)
 
- for _, child := range *pages {
-  children := "----------------------------------------------\n" + "TITLE: " + child.GetTitle() + "\n" + child.GetURL() + "\n" + "DATE: " + child.GetLastModified() + ", " + child.GetSize() + "\n" + strings.Join(child.GetKeywords(), " ") + "\n" + strings.Join(child.GetChildrenURL(), "\n") + "\n"
-  head += children
+	for _, child := range *pages {
+		children := "----------------------------------------------\n" + "TITLE: " + child.GetTitle() + "\n" + child.GetURL() + "\n" + "DATE: " + child.GetLastModified() + ", " + child.GetSize() + "\n" + strings.Join(child.GetKeywords(), " ") + "\n" + strings.Join(child.GetChildrenURL(), "\n") + "\n"
+		head += children
 
- }
+	}
 
- _, err = f.WriteString(head)
- if err != nil {
-  fmt.Println(err)
-  f.Close()
-  return
- }
+	_, err = f.WriteString(head)
+	if err != nil {
+		fmt.Println(err)
+		f.Close()
+		return
+	}
 
- // fmt.Println(l, "bytes written successfully")
- err = f.Close()
- if err != nil {
-  fmt.Println(err)
-  return
- }
+	// fmt.Println(l, "bytes written successfully")
+	err = f.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }

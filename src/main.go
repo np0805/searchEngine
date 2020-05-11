@@ -44,10 +44,10 @@ func main() {
 
 	pagerank.CalculatePageRank(0.85, &pagesMap)
 
-	// contoh cara ngambil page dari map
-	for _, page := range pagesMap {
-		fmt.Println(page.GetURL(), page.GetPageRank())
-	}
+	// // contoh cara ngambil page dari map
+	// for _, page := range pagesMap {
+	// 	fmt.Println(page.GetURL(), page.GetPageRank())
+	// }
 
 	// mapAwal := pagesMap["https://www.cse.ust.hk/admin/people/staff/"]
 	// fmt.Println(mapAwal.GetTitle())
@@ -62,10 +62,10 @@ func main() {
 	newMap := stopstem.StemThemAll(&pagesMap)
 	fmt.Println(len(newMap))
 	fmt.Println(time.Now()) // buat ngecek dia brp lama runnya
-	for _, page := range newMap {
-		fmt.Println("pageGetURL: ", page.GetURL())
-		fmt.Println("getPageRank: ", page.GetPageRank())
-	}
+	// for _, page := range newMap {
+	// 	fmt.Println("pageGetURL: ", page.GetURL())
+	// 	fmt.Println("getPageRank: ", page.GetPageRank())
+	// }
 	database.OpenAllDb()
 	database.ParseAllPages(&newMap)
 	//database.PrintPageIdDb()

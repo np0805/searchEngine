@@ -11,6 +11,12 @@ func main() {
 	database.OpenAllDb()
 	r := retrieval.RetrievalFunction("Lip Reading function cibay")
 	fmt.Println(r)
+	// str := database.FindChild("https://www.cse.ust.hk/")
+	// fmt.Println(str)
+	// str := database.GetPageKeyFreq(2)
+	// fmt.Println(str[0])
+	// a := database.GetLinkRank(86)
+	// fmt.Println(a)
 	// database.PrintTest()
 	// title := database.TitleMatch(510)
 

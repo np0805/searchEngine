@@ -26,6 +26,7 @@ func GetTitle(pageID int64) string {
 	return title
 }
 
+// PrintTest test aja
 func PrintTest() {
 	pageInfo.View(func(tx *bolt.Tx) error {
 		pageInfoBucket := tx.Bucket([]byte(pageInfoBuck))
@@ -39,6 +40,25 @@ func PrintTest() {
 		}
 		return nil
 	})
+}
+
+// GetLinkRank get the computed link-based page rank of a given pageid
+func GetLinkRank(pageID int64) (rank float64) {
+	err := pageInfo.View(func(tx *bolt.Tx) error {
+		pageRankBucket := tx.Bucket([]byte(pageRankBuck))
+		value := pageRankBucket.Get(IntToByte(pageID))
+		rank = ByteToFloat64(value)
+		// if value != nil {
+		// 	fmt.Println("awas")
+		// }
+		return nil
+	})
+	// fmt.Println("err ", err)
+	if err != nil {
+		return 0.0
+	}
+	return rank
+
 }
 
 //idf calculate inverse document frequency of a term
