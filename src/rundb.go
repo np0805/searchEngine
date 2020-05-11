@@ -11,9 +11,13 @@ import (
 func main() {
 	database.OpenAllDb()
 	fmt.Println(time.Now())
-	r := retrieval.RetrievalFunction("love compare")
+	r := retrieval.RetrievalFunction("love compare automatic")
 	fmt.Println(time.Now())
-	fmt.Println(r)
+	// fmt.Println(r)
+	for k, v := range r {
+		fmt.Println("key ", k, "value", *v)
+
+	}
 	// database.PrintTest()
 	// fmt.Println(database.DocLength(2))
 	// fmt.Println("-------------")
