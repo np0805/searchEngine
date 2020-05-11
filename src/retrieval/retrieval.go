@@ -20,6 +20,8 @@ func RetrievalFunction(query string) map[int64]float64 {
 		querySlice = append(querySlice, q)
 	}
 	queryLength := math.Sqrt(float64(len(querySlice)))
+	docLength := float64(database.GetPageNumber())
+
 	fmt.Println("length", queryLength)
 	queryStem := stopstem.StemString(querySlice)
 	wordMap := database.WordToWeightMap(queryStem)
@@ -35,7 +37,7 @@ func RetrievalFunction(query string) map[int64]float64 {
 		// get the length of keywords through k
 		// get the pagerank calculation from the db
 		_, titleScore := pagerank.TitleMatch(queryStem, k) // check for a match in the title and give boost in ranking
-		cossim := pagerank.CosSim(queryLength, v, 1.0)
+		cossim := pagerank.CosSim(queryLength, v, docLength)
 		linkrank := database.GetLinkRank(k)
 
 		pageScoreMap[k] = cossim + titleScore + linkrank

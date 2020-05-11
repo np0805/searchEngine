@@ -4,16 +4,18 @@ import (
 	"fmt"
 
 	"./database"
+	"./retrieval"
 )
 
 func main() {
 	database.OpenAllDb()
-	// r := retrieval.RetrievalFunction("Lip Reading function cibay")
-	// fmt.Println(r)
-	fmt.Println(database.GetPageNumber())
+	r := retrieval.RetrievalFunction("computer computation automatic")
+	fmt.Println(r)
+	fmt.Println(database.GetPageUrl(11))
+	// fmt.Println(database.GetPageNumber())
 	// database.PrintPageIdDb()
-	str := database.GetTopWords(1)
-	fmt.Println(str)
+	// str := database.GetTopWords(1)
+	// fmt.Println(str)
 	// str := database.FindChild("https://www.cse.ust.hk/")
 	// fmt.Println(str)
 	// str := database.GetPageKeyFreq(2)
