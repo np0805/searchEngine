@@ -132,7 +132,7 @@ func FindChild(url string) (ret []string) {
     parentChildBucket := tx.Bucket([]byte(parentChildBuck))
     value := parentChildBucket.Get(pageId)
     if value != nil {
-      ret = ByteToString(parentChildBucket.Get(value))
+      ret = ByteToString(value)
     } else {
       ret = nil
     }
