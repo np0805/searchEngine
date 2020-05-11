@@ -4,13 +4,14 @@ import (
 	"fmt"
 
 	"./database"
-	"./retrieval"
 )
 
 func main() {
 	database.OpenAllDb()
-	r := retrieval.RetrievalFunction("Lip Reading function cibay")
-	fmt.Println(r)
+	// r := retrieval.RetrievalFunction("Lip Reading function cibay")
+	// fmt.Println(r)
+	fmt.Println(database.GetPageNumber())
+	database.PrintPageIdDb()
 	// str := database.FindChild("https://www.cse.ust.hk/")
 	// fmt.Println(str)
 	// str := database.GetPageKeyFreq(2)
