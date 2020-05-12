@@ -34,5 +34,6 @@ func main() {
 	fmt.Println("Now Listening on 8000")
 	http.HandleFunc("/", index)
 	http.HandleFunc("/result", processinput)
+  http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	log.Fatal(http.ListenAndServe(":8000", nil))
 }
