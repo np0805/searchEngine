@@ -180,7 +180,7 @@ func DocFreqTerm(word string) map[int64]float64 {
 // value tf*idf of terms from the given slice
 func WordToWeightMap(words []string) map[int64]float64 {
 	wordWeightMap := make(map[int64]float64)
-	fmt.Println("words ", words)
+	// fmt.Println("words ", words)
 	N := float64(GetPageNumber())
 	// fmt.Println(GetWordId("comput"))
 	err := wordDb.View(func(tx *bolt.Tx) error {
@@ -200,7 +200,7 @@ func WordToWeightMap(words []string) map[int64]float64 {
 			// fmt.Println(len(stringValue))
 			df := len(stringValue)
 			idf := idf(df, N)
-			fmt.Println("idf of ", word, " is ", idf)
+			// fmt.Println("idf of ", word, " is ", idf)
 			for i := 0; i < len(stringValue); i++ {
 				res := strings.Split(stringValue[i], " ")
 				p, _ := (strconv.Atoi(res[0])) // get the page id
@@ -224,6 +224,37 @@ func WordToWeightMap(words []string) map[int64]float64 {
 		log.Fatal(err)
 	}
 	return wordWeightMap
+}
+
+// GetPage return pages that contain the words
+func GetPage(words []string) (pageID []int64) {
+	err := wordDb.View(func(tx *bolt.Tx) error {
+		wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
+
+		for _, word := range words {
+
+			w := GetWordId(word)
+			if w == 0 { // not found
+				fmt.Println("Word not found")
+				continue
+			}
+			// fmt.Println(IntToByte(w))
+			value := wordFreqBucket.Get(IntToByte(w))
+			stringValue := ByteToString(value)
+			for i := 0; i < len(stringValue); i++ {
+				res := strings.Split(stringValue[i], " ")
+				p, _ := (strconv.Atoi(res[0])) // get the page id
+				pid := int64(p)
+				pageID = append(pageID, pid)
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	return pageID
 }
 
 // FindChildById given a page Id, return the child []string

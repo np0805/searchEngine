@@ -84,34 +84,43 @@ func (page *PageScore) GetChildren() []string {
 // RetrievalFunction return a slice of pages sorted by similarity score with the query
 func RetrievalFunction(query string) []*PageScore {
 	// pageScoreMap := make(map[int64]float64)
-	fmt.Println(query)
 	reg, _ := regexp.Compile("[^a-zA-Z0-9]+ ")
 	query = reg.ReplaceAllString(string(query), " ")
-	fmt.Println(query)
 	pagesScores := make([]*PageScore, 0)
 	querySlice := make([]string, 0)
 	splitQuery := strings.Split(query, " ")
+
+	minusWord := make([]string, 0) // to get the list of words precedeed by "-", if any
 	for _, q := range splitQuery {
-		// if string(q[0]) == "-" {
-		// 	fmt.Println(string(q))
-		// }
 		if q != "" {
-			// if string(q[0]) == "-" {
-			// 	fmt.Println(string(q[0:2]))
-			// } else {
-			querySlice = append(querySlice, q)
-			// }
+			if string(q[0]) == "-" {
+				minusWord = append(minusWord, q[1:len(q)])
+			} else {
+				querySlice = append(querySlice, q)
+			}
 		}
 	}
-	fmt.Println("asd", splitQuery)
+
+	var excludedPage []int64
+	if minusWord != nil { // there is 1 or more minus term
+		excludedPage = database.GetPage(minusWord)
+	}
 	queryLength := math.Sqrt(float64(len(querySlice)))
 
-	fmt.Println("length", queryLength)
 	queryStem := stopstem.StemString(querySlice)
 	wordMap := database.WordToWeightMap(queryStem)
 	if len(wordMap) == 0 {
 		fmt.Println("No result for search using this query")
 		return nil
+	}
+
+	if excludedPage != nil {
+		for _, id := range excludedPage {
+			_, ok := wordMap[id]
+			if ok {
+				delete(wordMap, id)
+			}
+		}
 	}
 
 	for k, v := range wordMap {
