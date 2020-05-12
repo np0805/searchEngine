@@ -4,6 +4,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+  "strconv"
+  "strings"
 
 	"../crawler"
 )
@@ -19,6 +21,15 @@ func OpenAllDb() {
 func CloseAllDb() {
 	closePageIdDb()
 	closePageInfoDb()
+}
+
+func SliceToString(input []string) string {
+  return strings.Join(input, "<br>")
+}
+
+func FloatToString(input_num float64) string {
+    // to convert a float number to a string
+    return strconv.FormatFloat(input_num, 'f', 6, 64)
 }
 
 func ByteToFloat64(bytes []byte) float64 {

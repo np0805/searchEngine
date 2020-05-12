@@ -112,58 +112,50 @@ func RetrievalFunction(query string) []*PageScore {
 	wordMap := database.WordToWeightMap(queryStem)
 	if len(wordMap) == 0 {
 		fmt.Println("No result for search using this query")
-		return nil
-	}
-
-	if excludedPage != nil {
-		for _, id := range excludedPage {
-			_, ok := wordMap[id]
-			if ok {
-				delete(wordMap, id)
+	} else {
+		if excludedPage != nil {
+			for _, id := range excludedPage {
+				_, ok := wordMap[id]
+				if ok {
+					delete(wordMap, id)
+				}
 			}
 		}
+
+		for k, v := range wordMap {
+			docLength := math.Sqrt(database.DocLength(k))
+			_, titleScore := pagerank.TitleMatch(queryStem, k) // check for a match in the title and give boost in ranking
+			cossim := pagerank.CosSim(queryLength, v, docLength)
+			linkrank := database.GetLinkRank(k)
+			title, url, lastmodified, size := database.ExtractPageInfo(k)
+
+			topWords := database.GetTopWords(k)
+			parents := database.FindParentById(k)
+			children := database.FindChildById(k)
+			score := cossim + titleScore + linkrank
+			pageScore := PageScore{
+				Id:           k,
+				Score:        score,
+				Title:        title,
+				Url:          url,
+				LastModified: lastmodified,
+				PageSize:     size,
+				Keywords:     topWords,
+				Parents:      parents,
+				Children:     children}
+
+			pagesScores = append(pagesScores, &pageScore)
+			// pageScoreMap[k] = cossim + titleScore + linkrank
+		}
+		// sort.Sort(pagesScores)
+		sort.SliceStable(pagesScores, func(i, j int) bool {
+			return pagesScores[i].Score > pagesScores[j].Score
+		})
 	}
 
-	for k, v := range wordMap {
-		docLength := math.Sqrt(database.DocLength(k))
-		_, titleScore := pagerank.TitleMatch(queryStem, k) // check for a match in the title and give boost in ranking
-		cossim := pagerank.CosSim(queryLength, v, docLength)
-		linkrank := database.GetLinkRank(k)
-		title, url, lastmodified, size := database.ExtractPageInfo(k)
-
-		topWords := database.GetTopWords(k)
-		parents := database.FindParentById(k)
-		children := database.FindChildById(k)
-		score := cossim + titleScore + linkrank
-		// if url == "https://www.cse.ust.hk/" {
-		// 	fmt.Println("-------------")
-		// 	fmt.Println("cosin", cossim)
-		// 	fmt.Println("title", titleScore)
-		// 	fmt.Println("linkrank", linkrank)
-		// 	fmt.Println("doclength di retrieve", docLength)
-		// 	fmt.Println("-------------")
-		// }
-		pageScore := PageScore{
-			Id:           k,
-			Score:        score,
-			Title:        title,
-			Url:          url,
-			LastModified: lastmodified,
-			PageSize:     size,
-			Keywords:     topWords,
-			Parents:      parents,
-			Children:     children}
-
-		pagesScores = append(pagesScores, &pageScore)
-		// pageScoreMap[k] = cossim + titleScore + linkrank
-	}
-	// sort.Sort(pagesScores)
-	sort.SliceStable(pagesScores, func(i, j int) bool {
-		return pagesScores[i].Score > pagesScores[j].Score
-	})
-
+	newMap := map[string][]*PageScore{"result": pagesScores}
 	// write to json, kalo ini gadipake dibuang aja
-	file, _ := json.MarshalIndent(pagesScores, "", " ")
+	file, _ := json.MarshalIndent(newMap, "", " ")
 
 	ioutil.WriteFile("search_output.json", file, os.ModePerm)
 

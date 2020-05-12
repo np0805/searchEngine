@@ -19,6 +19,7 @@ var parentChildBuck string = "parentChildBuck"
 var childParentBuck string = "childParentBuck"
 var pageRankBuck string = "pageRankBuck"
 var pageTitleStemBuck string = "pageTitleStem"
+var pageModifBuck string = "pageModifBuck"
 
 func openPageInfoDb() {
 	var err error
@@ -52,6 +53,11 @@ func openPageInfoDb() {
 		_, err = tx.CreateBucketIfNotExists([]byte(pageTitleStemBuck))
 		if err != nil {
 			return fmt.Errorf("pageInfo create fifth bucket: %s", err)
+		}
+
+		_, err = tx.CreateBucketIfNotExists([]byte(pageModifBuck))
+		if err != nil {
+			return fmt.Errorf("pageInfo create sixth bucket: %s", err)
 		}
 
 		return nil
@@ -162,6 +168,34 @@ func parseAllInfo(page *crawler.Page) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+  err = pageInfo.Update(func(tx *bolt.Tx) error {
+    pageModifBucket := tx.Bucket([]byte(pageModifBuck))
+    pageModifBucket.Put(IntToByte(GetPageId(page.GetURL())), []byte(page.GetLastModified()))
+
+    return nil
+  })
+  if err != nil {
+    log.Fatal(err)
+  }
+}
+
+// for a given pageid, return the modified date, if doesnt exist, return empty string
+func GetPageModified(id int64) string {
+  var ret string = ""
+  err := pageInfo.View(func(tx *bolt.Tx) error {
+    pageModifBucket := tx.Bucket([]byte(pageModifBuck))
+    value := pageModifBucket.Get(IntToByte(id))
+    if value != nil {
+      ret = string(value)
+    }
+
+    return nil
+  })
+  if err != nil {
+    log.Fatal(err)
+  }
+  return ret
 }
 
 // given a page url, return the child []string
