@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -83,12 +84,26 @@ func (page *PageScore) GetChildren() []string {
 // RetrievalFunction return a slice of pages sorted by similarity score with the query
 func RetrievalFunction(query string) []*PageScore {
 	// pageScoreMap := make(map[int64]float64)
+	fmt.Println(query)
+	reg, _ := regexp.Compile("[^a-zA-Z0-9]+ ")
+	query = reg.ReplaceAllString(string(query), " ")
+	fmt.Println(query)
 	pagesScores := make([]*PageScore, 0)
 	querySlice := make([]string, 0)
 	splitQuery := strings.Split(query, " ")
 	for _, q := range splitQuery {
-		querySlice = append(querySlice, q)
+		// if string(q[0]) == "-" {
+		// 	fmt.Println(string(q))
+		// }
+		if q != "" {
+			// if string(q[0]) == "-" {
+			// 	fmt.Println(string(q[0:2]))
+			// } else {
+			querySlice = append(querySlice, q)
+			// }
+		}
 	}
+	fmt.Println("asd", splitQuery)
 	queryLength := math.Sqrt(float64(len(querySlice)))
 
 	fmt.Println("length", queryLength)

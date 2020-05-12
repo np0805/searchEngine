@@ -23,6 +23,10 @@ dummy/*
 assets/spider_result.txt
 assets/spider_result_stem.txt
 
+
+# retrieval function output
+src/*.json
+
 ### macOS ###
 # General
 .DS_Store
