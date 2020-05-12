@@ -25,27 +25,25 @@ func processinput(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	database.OpenAllDb()
 	fmt.Println(time.Now())
-	t := r.FormValue("searchInput")
-	retrieval.RetrievalFunction(t)
-	//typeresult := reflect.TypeOf(resultmap)
-	//teststring := resultmap[0].GetTitle()
-	//fmt.Println(teststring)
+	retrieval.RetrievalFunction(r.FormValue("searchInput"))
+	fmt.Println(time.Now())
 	d := struct {
-		Time   time.Time
-		String string
+		Time string
+		//String string
 	}{
-		Time:   time.Now(),
-		String: t,
+		Time: "what time is it",
+		//String: t,
 	}
 
 	tpl.ExecuteTemplate(w, "result.html", d)
-	database.CloseAlldb()
 }
 func main() {
 	fmt.Println("Now Listening on 8000")
+	database.OpenAllDb()
 	http.HandleFunc("/", index)
+	http.HandleFunc("/index", index)
 	http.HandleFunc("/result", processinput)
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("css"))))
 	log.Fatal(http.ListenAndServe(":8000", nil))
 }
