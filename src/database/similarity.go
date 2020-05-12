@@ -214,3 +214,44 @@ func WordToWeightMap(words []string) map[int64]float64 {
 	}
 	return wordWeightMap
 }
+
+// FindChildById given a page Id, return the child []string
+func FindChildById(Id int64) (ret []string) {
+	pageId := IntToByte(Id)
+	err := pageInfo.View(func(tx *bolt.Tx) error {
+		parentChildBucket := tx.Bucket([]byte(parentChildBuck))
+		value := parentChildBucket.Get(pageId)
+		if value != nil {
+			ret = ByteToString(value)
+		} else {
+			ret = nil
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return ret
+}
+
+// given a page Id, return the parent []string
+func FindParentById(Id int64) (ret []string) {
+	pageId := IntToByte(Id)
+	err := pageInfo.View(func(tx *bolt.Tx) error {
+		childParentBucket := tx.Bucket([]byte(childParentBuck))
+		value := childParentBucket.Get(pageId)
+		if value != nil {
+			ret = ByteToString(value)
+		} else {
+			ret = nil
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return ret
+}
