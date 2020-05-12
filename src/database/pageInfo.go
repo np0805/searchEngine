@@ -183,6 +183,25 @@ func FindParent(url string) (ret []string) {
 	return ret
 }
 
+// return number of pages in the pageIdDb, if empty, return 0
+func GetPageNumber() (ret int64) {
+	ret = int64(0)
+  err := pageInfo.View(func(tx *bolt.Tx) error {
+    pageRankBucket := tx.Bucket([]byte(pageRankBuck))
+    val := pageRankBucket.Stats()
+    size := val.KeyN
+    fmt.Println("size: ")
+    fmt.Println(size)
+
+    return nil
+  })
+  if err != nil {
+    log.Fatal(err)
+  }
+
+  return ret
+}
+
 // print pageInfoDb in human readable format
 func PrintPageInfoDb() {
 	pageInfo.View(func(tx *bolt.Tx) error {
