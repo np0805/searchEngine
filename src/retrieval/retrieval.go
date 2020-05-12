@@ -110,12 +110,14 @@ func RetrievalFunction(query string) []*PageScore {
 		parents := database.FindParentById(k)
 		children := database.FindChildById(k)
 		score := cossim + titleScore + linkrank
-		if url == "https://www.cse.ust.hk/" {
-			fmt.Println("cosin", cossim)
-			fmt.Println("title", titleScore)
-			fmt.Println("linkrank", linkrank)
-			fmt.Println("doclength di retrieve", docLength)
-		}
+		// if url == "https://www.cse.ust.hk/" {
+		// 	fmt.Println("-------------")
+		// 	fmt.Println("cosin", cossim)
+		// 	fmt.Println("title", titleScore)
+		// 	fmt.Println("linkrank", linkrank)
+		// 	fmt.Println("doclength di retrieve", docLength)
+		// 	fmt.Println("-------------")
+		// }
 		pageScore := PageScore{
 			Id:           k,
 			Score:        score,

@@ -2,11 +2,9 @@ package pagerank
 
 import (
 	"math"
-	"strings"
 
 	"../crawler"
 	"../database"
-	"../stopstem"
 )
 
 // CalculatePageRank given a damping factor and map of pages, calculate the ranks recursively
@@ -50,13 +48,13 @@ func TitleMatch(word []string, pageID int64) (ok bool, queryScore float64) {
 	for _, w := range word {
 		wordScore := 0.0
 		title := database.GetTitle(pageID)
-		splitTitle := strings.Split(title, " ")
-		titleSlice := make([]string, 0)
-		for _, q := range splitTitle {
-			titleSlice = append(titleSlice, q)
-		}
-		titleStem := stopstem.StemString(titleSlice)
-		for _, t := range titleStem {
+		// splitTitle := strings.Split(title, " ")
+		// titleSlice := make([]string, 0)
+		// for _, q := range splitTitle {
+		// 	titleSlice = append(titleSlice, q)
+		// }
+		// titleStem := stopstem.StemString(titleSlice)
+		for _, t := range title {
 			if w == t {
 				ok = true
 				wordScore++

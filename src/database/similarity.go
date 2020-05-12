@@ -11,13 +11,12 @@ import (
 )
 
 // GetTitle get a title given a page id
-func GetTitle(pageID int64) string {
-	var title string
+func GetTitle(pageID int64) (title []string) {
 	pageInfo.View(func(tx *bolt.Tx) error {
-		pageInfoBucket := tx.Bucket([]byte(pageInfoBuck))
-		value := pageInfoBucket.Get(IntToByte(pageID))
+		pageTitleStemBucket := tx.Bucket([]byte(pageTitleStemBuck))
+		value := pageTitleStemBucket.Get(IntToByte(pageID))
 		stringvalue := ByteToString(value)
-		title = stringvalue[0]
+		title = stringvalue
 		return nil
 	})
 	return title
@@ -32,9 +31,17 @@ func PrintTest() {
 		fmt.Println("pageInfoBucket")
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			if v != nil {
-				value := ByteToString(v)
-				fmt.Println("key: ", ByteToInt(k), "value: ", value)
+				fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
 			}
+			break
+		}
+
+		fmt.Println("pageTitleStemBucket")
+		pageTitleStemBucket := tx.Bucket([]byte(pageTitleStemBuck))
+		c = pageTitleStemBucket.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
 			break
 		}
 
@@ -109,9 +116,9 @@ func DocLength(pageID int64) float64 {
 
 		return nil
 	})
-	if pageID == GetPageId("https://www.cse.ust.hk/") {
-		fmt.Println("doclegnth", math.Sqrt(docLength))
-	}
+	// if pageID == GetPageId("https://www.cse.ust.hk/") {
+	// 	fmt.Println("doclegnth", math.Sqrt(docLength))
+	// }
 	if err != nil {
 		log.Fatal(err)
 	}

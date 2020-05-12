@@ -11,12 +11,15 @@ import (
 func main() {
 	database.OpenAllDb()
 	fmt.Println(time.Now())
-	r := retrieval.RetrievalFunction("hkust engine computer")
+	r := retrieval.RetrievalFunction("love Department OF science")
 	fmt.Println(time.Now())
 	for k, v := range r {
 		fmt.Println("key ", k, "value", v.GetURL(), v.GetTitle(), v.GetPageRank())
 		break
 	}
-	fmt.Println(len(r))
-	fmt.Println(database.GetPageNumber())
+	// fmt.Println("-------")
+	// database.PrintTest()
+	// fmt.Println(len(r))
+	// fmt.Println(database.GetPageNumber())
+
 }
