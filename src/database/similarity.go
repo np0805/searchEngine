@@ -102,12 +102,16 @@ func DocLength(pageID int64) float64 {
 			idf := idf(df, N)
 
 			tfidf := tf * idf
+
 			docLength += tfidf * tfidf
 			// fmt.Println("idf of ", GetWord(wordID), " is ", idf, "tf ", tf, "docLength ", docLength)
 		}
 
 		return nil
 	})
+	if pageID == GetPageId("https://www.cse.ust.hk/") {
+		fmt.Println("doclegnth", math.Sqrt(docLength))
+	}
 	if err != nil {
 		log.Fatal(err)
 	}

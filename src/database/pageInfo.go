@@ -133,18 +133,18 @@ func parseAllInfo(page *crawler.Page) {
 			}
 		}
 
-    // stem the title and put into pageTitleStemBucket
-    temp := page.GetTitle()
+		// stem the title and put into pageTitleStemBucket
+		temp := page.GetTitle()
 		reg, err := regexp.Compile("[^a-zA-Z0-9]+ ")
 		temp = reg.ReplaceAllString(string(temp), " ")
-    pageTitle := strings.Split(temp, " ")
-    pageTitle = stopstem.StemString(pageTitle)
+		pageTitle := strings.Split(temp, " ")
+		pageTitle = stopstem.StemString(pageTitle)
 
-    pageTitleStemBucket := tx.Bucket([]byte(pageTitleStemBuck))
-    err = pageTitleStemBucket.Put(pageId, StringToByte(pageTitle))
-    if err != nil {
-      return fmt.Errorf("Error in pageInfo: stemming pageTitle error: %s", err)
-    }
+		pageTitleStemBucket := tx.Bucket([]byte(pageTitleStemBuck))
+		err = pageTitleStemBucket.Put(pageId, StringToByte(pageTitle))
+		if err != nil {
+			return fmt.Errorf("Error in pageInfo: stemming pageTitle error: %s", err)
+		}
 
 		return nil
 	})
@@ -208,20 +208,20 @@ func FindParent(url string) (ret []string) {
 // return number of pages in the pageIdDb, if empty, return 0
 func GetPageNumber() (ret int64) {
 	ret = int64(0)
-  err := pageInfo.View(func(tx *bolt.Tx) error {
-    pageRankBucket := tx.Bucket([]byte(pageRankBuck))
-    val := pageRankBucket.Stats()
-    size := val.KeyN
-    fmt.Println("size: ")
-    fmt.Println(size)
+	err := pageInfo.View(func(tx *bolt.Tx) error {
+		pageRankBucket := tx.Bucket([]byte(pageRankBuck))
+		val := pageRankBucket.Stats()
+		size := val.KeyN
+		// fmt.Println("size: ")
+		// fmt.Println(size)
+		ret = int64(size)
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    return nil
-  })
-  if err != nil {
-    log.Fatal(err)
-  }
-
-  return ret
+	return ret
 }
 
 // print pageInfoDb in human readable format

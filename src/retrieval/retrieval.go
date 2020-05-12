@@ -109,9 +109,16 @@ func RetrievalFunction(query string) []*PageScore {
 		topWords := database.GetTopWords(k)
 		parents := database.FindParentById(k)
 		children := database.FindChildById(k)
+		score := cossim + titleScore + linkrank
+		if url == "https://www.cse.ust.hk/" {
+			fmt.Println("cosin", cossim)
+			fmt.Println("title", titleScore)
+			fmt.Println("linkrank", linkrank)
+			fmt.Println("doclength di retrieve", docLength)
+		}
 		pageScore := PageScore{
 			Id:           k,
-			Score:        cossim + titleScore + linkrank,
+			Score:        score,
 			Title:        title,
 			Url:          url,
 			LastModified: lastmodified,
