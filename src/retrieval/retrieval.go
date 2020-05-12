@@ -103,6 +103,7 @@ func RetrievalFunction(query string) []*PageScore {
 
 	var excludedPage []int64
 	if minusWord != nil { // there is 1 or more minus term
+		minusWord := stopstem.StemString(minusWord)
 		excludedPage = database.GetPage(minusWord)
 	}
 	queryLength := math.Sqrt(float64(len(querySlice)))
