@@ -12,6 +12,14 @@ import (
 )
 
 // PageScore struct
+// score
+// title
+// page url
+// last modif date
+// size
+// top keywords
+// []parent link
+// []children link
 type PageScore struct {
 	id           int64
 	score        float64
@@ -19,6 +27,9 @@ type PageScore struct {
 	url          string
 	lastModified string
 	pageSize     string
+	keywords     []string
+	parents      []string
+	children     []string
 }
 
 // GetID return id of page
@@ -51,7 +62,22 @@ func (page *PageScore) GetSize() string {
 	return page.pageSize
 }
 
-// RetrievalFunction return a map of page id and similarity score given a query
+// GetKeywords return top 5 keywords of page
+func (page *PageScore) GetKeywords() []string {
+	return page.keywords
+}
+
+// GetParents return the parents of page
+func (page *PageScore) GetParents() []string {
+	return page.parents
+}
+
+// GetChildren return the children of page
+func (page *PageScore) GetChildren() []string {
+	return page.children
+}
+
+// RetrievalFunction return a slice of pages sorted by similarity score with the query
 func RetrievalFunction(query string) []*PageScore {
 	// pageScoreMap := make(map[int64]float64)
 	pagesScores := make([]*PageScore, 0)
@@ -78,13 +104,20 @@ func RetrievalFunction(query string) []*PageScore {
 		cossim := pagerank.CosSim(queryLength, v, docLength)
 		linkrank := database.GetLinkRank(k)
 		title, url, lastmodified, size := database.ExtractPageInfo(k)
+
+		topWords := database.GetTopWords(k)
+		parents := database.FindParentById(k)
+		children := database.FindChildById(k)
 		pageScore := PageScore{
 			id:           k,
 			score:        cossim + titleScore + linkrank,
 			title:        title,
 			url:          url,
 			lastModified: lastmodified,
-			pageSize:     size}
+			pageSize:     size,
+			keywords:     topWords,
+			parents:      parents,
+			children:     children}
 
 		pagesScores = append(pagesScores, &pageScore)
 		// pageScoreMap[k] = cossim + titleScore + linkrank
@@ -93,6 +126,7 @@ func RetrievalFunction(query string) []*PageScore {
 	sort.SliceStable(pagesScores, func(i, j int) bool {
 		return pagesScores[i].score > pagesScores[j].score
 	})
+
 	return pagesScores
 }
 
