@@ -95,6 +95,7 @@ func ParseAllPages(pages *map[string]*crawler.Page) {
 		parseAllChild(page)
 		parseAllInfo(page)
 		// fmt.Println("keywords: ", page.GetKeywords())
+    // PrintPageInfoDb()
 		parseAllWord(page)
 		// PrintWordDb()
 		// fmt.Println(GetPageKeyFreq(page.GetURL()))

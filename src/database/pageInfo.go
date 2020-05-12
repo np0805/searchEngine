@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
+	"strings"
 
 	"../crawler"
+	"../stopstem"
 
 	bolt "go.etcd.io/bbolt"
 )
@@ -15,6 +18,7 @@ var pageInfoBuck string = "pageInfoBuck"
 var parentChildBuck string = "parentChildBuck"
 var childParentBuck string = "childParentBuck"
 var pageRankBuck string = "pageRankBuck"
+var pageTitleStemBuck string = "pageTitleStem"
 
 func openPageInfoDb() {
 	var err error
@@ -43,6 +47,11 @@ func openPageInfoDb() {
 		_, err = tx.CreateBucketIfNotExists([]byte(pageRankBuck))
 		if err != nil {
 			return fmt.Errorf("pageInfo create fourth bucket: %s", err)
+		}
+
+		_, err = tx.CreateBucketIfNotExists([]byte(pageTitleStemBuck))
+		if err != nil {
+			return fmt.Errorf("pageInfo create fifth bucket: %s", err)
 		}
 
 		return nil
@@ -123,6 +132,19 @@ func parseAllInfo(page *crawler.Page) {
 				}
 			}
 		}
+
+    // stem the title and put into pageTitleStemBucket
+    temp := page.GetTitle()
+		reg, err := regexp.Compile("[^a-zA-Z0-9]+ ")
+		temp = reg.ReplaceAllString(string(temp), " ")
+    pageTitle := strings.Split(temp, " ")
+    pageTitle = stopstem.StemString(pageTitle)
+
+    pageTitleStemBucket := tx.Bucket([]byte(pageTitleStemBuck))
+    err = pageTitleStemBucket.Put(pageId, StringToByte(pageTitle))
+    if err != nil {
+      return fmt.Errorf("Error in pageInfo: stemming pageTitle error: %s", err)
+    }
 
 		return nil
 	})
@@ -241,6 +263,14 @@ func PrintPageInfoDb() {
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			fmt.Println("key: ", ByteToInt(k), "value: ", ByteToFloat64(v))
+		}
+
+		fmt.Println("pageTitleStemBucket")
+		pageTitleStemBucket := tx.Bucket([]byte(pageTitleStemBuck))
+		c = pageTitleStemBucket.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			fmt.Println("key: ", ByteToInt(k), "value: ", ByteToString(v))
 		}
 
 		return nil
