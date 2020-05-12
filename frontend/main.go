@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"text/template"
+
+	"../src/retrieval"
 )
 
 var tpl *template.Template
@@ -21,14 +23,14 @@ func processinput(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	uInput := r.FormValue("searchInput")
-
-	d := struct {
-		String string
+	resultmap := retrieval.RetrievalFunction(r.FormValue("searchInput"))
+	//typeresult := reflect.TypeOf(resultmap)
+	/* d := struct {
+		String reflect.Type
 	}{
-		String: uInput}
-
-	tpl.ExecuteTemplate(w, "result.html", d)
+		String: typeresult}
+	*/
+	tpl.ExecuteTemplate(w, "result.html", resultmap)
 }
 func main() {
 	fmt.Println("Now Listening on 8000")

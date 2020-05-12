@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"./database"
 	"./retrieval"
@@ -9,9 +10,17 @@ import (
 
 func main() {
 	database.OpenAllDb()
-	r := retrieval.RetrievalFunction("computer computation automatic")
-	fmt.Println(r)
-	fmt.Println(database.GetPageUrl(11))
+	fmt.Println(time.Now())
+	r := retrieval.RetrievalFunction("love compare automatic")
+	fmt.Println(time.Now())
+	for k, v := range r {
+		fmt.Println("key ", k, "value", v.GetTitle())
+	}
+	fmt.Println("-------------")
+	fmt.Println(database.ExtractPageInfo(2))
+	// database.PrintTest()
+	// fmt.Println(database.DocLength(2))
+	// fmt.Println("-------------")
 	// fmt.Println(database.GetPageNumber())
 	// database.PrintPageIdDb()
 	// str := database.GetTopWords(1)

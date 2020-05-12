@@ -10,9 +10,6 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
-// N total number of documents in the database
-const N = 540
-
 // GetTitle get a title given a page id
 func GetTitle(pageID int64) string {
 	var title string
@@ -31,15 +28,34 @@ func PrintTest() {
 	pageInfo.View(func(tx *bolt.Tx) error {
 		pageInfoBucket := tx.Bucket([]byte(pageInfoBuck))
 		c := pageInfoBucket.Cursor()
+
 		fmt.Println("pageInfoBucket")
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			if v != nil {
-				coba := ByteToString(v)
-				fmt.Println("key: ", k, "value: ", coba)
+				value := ByteToString(v)
+				fmt.Println("key: ", ByteToInt(k), "value: ", value)
 			}
+			break
 		}
+
 		return nil
 	})
+}
+
+// ExtractPageInfo get the info from pageinfo bucket
+func ExtractPageInfo(pageID int64) (title, url, lastmodified, size string) {
+	pageInfo.View(func(tx *bolt.Tx) error {
+		pageInfoBucket := tx.Bucket([]byte(pageInfoBuck))
+		value := pageInfoBucket.Get(IntToByte(pageID))
+		v := ByteToString(value)
+		title = v[0]
+		url = v[1]
+		lastmodified = v[2]
+		size = v[3]
+
+		return nil
+	})
+	return title, url, lastmodified, size
 }
 
 // GetLinkRank get the computed link-based page rank of a given pageid
@@ -63,10 +79,46 @@ func idf(df int, N float64) float64 {
 	return math.Log2(N / float64(df))
 }
 
+// DocLength calculate the page frequency length, to be used for cosine similarity
+func DocLength(pageID int64) float64 {
+	keywords := GetPageKeyFreq(pageID)
+	N := float64(GetPageNumber())
+	docLength := 0.0
+	err := wordDb.View(func(tx *bolt.Tx) error {
+		wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
+		for _, wordfreq := range keywords {
+			ret := strings.Split(wordfreq, " ")
+			intWordID, _ := (strconv.Atoi(ret[0]))
+
+			wordID := int64(intWordID)
+			intfreq, _ := (strconv.Atoi(ret[1]))
+			tf := float64(intfreq)
+
+			// fmt.Println(IntToByte(w))
+			value := wordFreqBucket.Get(IntToByte(wordID))
+			stringValue := ByteToString(value)
+
+			df := len(stringValue)
+			idf := idf(df, N)
+
+			tfidf := tf * idf
+			docLength += tfidf * tfidf
+			// fmt.Println("idf of ", GetWord(wordID), " is ", idf, "tf ", tf, "docLength ", docLength)
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	return docLength
+}
+
 // DocFreqTerm get document frequency of 1 term j
 func DocFreqTerm(word string) map[int64]float64 {
 	wordFreqMap := make(map[int64]float64)
 	fmt.Println("words ", word)
+	N := float64(GetPageNumber())
 	// fmt.Println(GetWordId("comput"))
 	err := wordDb.View(func(tx *bolt.Tx) error {
 		wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
@@ -118,6 +170,7 @@ func DocFreqTerm(word string) map[int64]float64 {
 func WordToWeightMap(words []string) map[int64]float64 {
 	wordWeightMap := make(map[int64]float64)
 	fmt.Println("words ", words)
+	N := float64(GetPageNumber())
 	// fmt.Println(GetWordId("comput"))
 	err := wordDb.View(func(tx *bolt.Tx) error {
 		wordFreqBucket := tx.Bucket([]byte(wordFreqBuck))
