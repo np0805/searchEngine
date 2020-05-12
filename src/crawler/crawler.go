@@ -291,7 +291,7 @@ func (page *Page) MakeLessChildren(pages *map[string]*Page) {
 				childPage.ParentURL = append(childPage.ParentURL, page.GetURL())
 			}
 		}
-		if i == 30 {
+		if i == 5 {
 			break
 		}
 	}

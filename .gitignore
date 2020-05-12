@@ -18,20 +18,14 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-
 # Project testing folder
 dummy/*
+assets/spider_result.txt
+assets/spider_result_stem.txt
 
-# Project specific files
-rocksdb-master/*
-htmlparser1_6/*
-lib/*
-assets/db/link_to_id/*
-assets/db/page_info/*
-assets/db/word_to_id/*
-assets/db/word_freq/*
+
+# retrieval function output
+src/*.json
 
 ### macOS ###
 # General
@@ -60,3 +54,7 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Vim
+src/*.vim
+
