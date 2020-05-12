@@ -211,9 +211,7 @@ func GetPageNumber() (ret int64) {
   err := pageInfo.View(func(tx *bolt.Tx) error {
     pageRankBucket := tx.Bucket([]byte(pageRankBuck))
     val := pageRankBucket.Stats()
-    size := val.KeyN
-    fmt.Println("size: ")
-    fmt.Println(size)
+    ret = int64(val.KeyN)
 
     return nil
   })
