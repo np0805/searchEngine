@@ -109,7 +109,6 @@ func DocLength(pageID int64) float64 {
 			idf := idf(df, N)
 
 			tfidf := tf * idf
-
 			docLength += tfidf * tfidf
 			// fmt.Println("idf of ", GetWord(wordID), " is ", idf, "tf ", tf, "docLength ", docLength)
 		}

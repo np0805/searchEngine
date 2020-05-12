@@ -6,7 +6,10 @@ import (
 	"io/ioutil"
 	"math"
 	"os"
+<<<<<<< HEAD
 	"regexp"
+=======
+>>>>>>> a70e3a1fa6b98b02e6e25bc96a4c1356fbc5583c
 	"sort"
 	"strings"
 
@@ -84,8 +87,11 @@ func (page *PageScore) GetChildren() []string {
 // RetrievalFunction return a slice of pages sorted by similarity score with the query
 func RetrievalFunction(query string) []*PageScore {
 	// pageScoreMap := make(map[int64]float64)
+<<<<<<< HEAD
 	reg, _ := regexp.Compile("[^a-zA-Z0-9]+ ")
 	query = reg.ReplaceAllString(string(query), " ")
+=======
+>>>>>>> a70e3a1fa6b98b02e6e25bc96a4c1356fbc5583c
 	pagesScores := make([]*PageScore, 0)
 	querySlice := make([]string, 0)
 	splitQuery := strings.Split(query, " ")
@@ -114,6 +120,7 @@ func RetrievalFunction(query string) []*PageScore {
 		return nil
 	}
 
+<<<<<<< HEAD
 	if excludedPage != nil {
 		for _, id := range excludedPage {
 			_, ok := wordMap[id]
@@ -123,12 +130,15 @@ func RetrievalFunction(query string) []*PageScore {
 		}
 	}
 
+=======
+>>>>>>> a70e3a1fa6b98b02e6e25bc96a4c1356fbc5583c
 	for k, v := range wordMap {
 		docLength := math.Sqrt(database.DocLength(k))
 		_, titleScore := pagerank.TitleMatch(queryStem, k) // check for a match in the title and give boost in ranking
 		cossim := pagerank.CosSim(queryLength, v, docLength)
 		linkrank := database.GetLinkRank(k)
 		title, url, lastmodified, size := database.ExtractPageInfo(k)
+<<<<<<< HEAD
 
 		topWords := database.GetTopWords(k)
 		parents := database.FindParentById(k)
@@ -153,6 +163,23 @@ func RetrievalFunction(query string) []*PageScore {
 			Parents:      parents,
 			Children:     children}
 
+=======
+
+		topWords := database.GetTopWords(k)
+		parents := database.FindParentById(k)
+		children := database.FindChildById(k)
+		pageScore := PageScore{
+			Id:           k,
+			Score:        cossim + titleScore + linkrank,
+			Title:        title,
+			Url:          url,
+			LastModified: lastmodified,
+			PageSize:     size,
+			Keywords:     topWords,
+			Parents:      parents,
+			Children:     children}
+
+>>>>>>> a70e3a1fa6b98b02e6e25bc96a4c1356fbc5583c
 		pagesScores = append(pagesScores, &pageScore)
 		// pageScoreMap[k] = cossim + titleScore + linkrank
 	}
