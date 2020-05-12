@@ -1,8 +1,11 @@
 package retrieval
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
+	"os"
 	"sort"
 	"strings"
 
@@ -21,60 +24,60 @@ import (
 // []parent link
 // []children link
 type PageScore struct {
-	id           int64
-	score        float64
-	title        string
-	url          string
-	lastModified string
-	pageSize     string
-	keywords     []string
-	parents      []string
-	children     []string
+	Id           int64
+	Score        float64
+	Title        string
+	Url          string
+	LastModified string
+	PageSize     string
+	Keywords     []string
+	Parents      []string
+	Children     []string
 }
 
 // GetID return id of page
 func (page *PageScore) GetID() int64 {
-	return page.id
+	return page.Id
 }
 
-// GetScore return score of page
-func (page *PageScore) GetScore() float64 {
-	return page.score
+// GetPageRank return score of page
+func (page *PageScore) GetPageRank() float64 {
+	return page.Score
 }
 
 // GetTitle return id of page
 func (page *PageScore) GetTitle() string {
-	return page.title
+	return page.Title
 }
 
 // GetURL return url of page
 func (page *PageScore) GetURL() string {
-	return page.url
+	return page.Url
 }
 
 // GetLastModified return modified date of page
 func (page *PageScore) GetLastModified() string {
-	return page.lastModified
+	return page.LastModified
 }
 
 // GetSize return size of page
 func (page *PageScore) GetSize() string {
-	return page.pageSize
+	return page.PageSize
 }
 
 // GetKeywords return top 5 keywords of page
 func (page *PageScore) GetKeywords() []string {
-	return page.keywords
+	return page.Keywords
 }
 
 // GetParents return the parents of page
 func (page *PageScore) GetParents() []string {
-	return page.parents
+	return page.Parents
 }
 
 // GetChildren return the children of page
 func (page *PageScore) GetChildren() []string {
-	return page.children
+	return page.Children
 }
 
 // RetrievalFunction return a slice of pages sorted by similarity score with the query
@@ -96,8 +99,6 @@ func RetrievalFunction(query string) []*PageScore {
 		return nil
 	}
 
-	// fmt.Println(wordMap)
-	// i := 0
 	for k, v := range wordMap {
 		docLength := math.Sqrt(database.DocLength(k))
 		_, titleScore := pagerank.TitleMatch(queryStem, k) // check for a match in the title and give boost in ranking
@@ -109,35 +110,28 @@ func RetrievalFunction(query string) []*PageScore {
 		parents := database.FindParentById(k)
 		children := database.FindChildById(k)
 		pageScore := PageScore{
-			id:           k,
-			score:        cossim + titleScore + linkrank,
-			title:        title,
-			url:          url,
-			lastModified: lastmodified,
-			pageSize:     size,
-			keywords:     topWords,
-			parents:      parents,
-			children:     children}
+			Id:           k,
+			Score:        cossim + titleScore + linkrank,
+			Title:        title,
+			Url:          url,
+			LastModified: lastmodified,
+			PageSize:     size,
+			Keywords:     topWords,
+			Parents:      parents,
+			Children:     children}
 
 		pagesScores = append(pagesScores, &pageScore)
 		// pageScoreMap[k] = cossim + titleScore + linkrank
 	}
 	// sort.Sort(pagesScores)
 	sort.SliceStable(pagesScores, func(i, j int) bool {
-		return pagesScores[i].score > pagesScores[j].score
+		return pagesScores[i].Score > pagesScores[j].Score
 	})
 
-	return pagesScores
-}
+	// write to json, kalo ini gadipake dibuang aja
+	file, _ := json.MarshalIndent(pagesScores, "", " ")
 
-// FillPage fill the values of the PageScore struct
-// title
-// page url
-// last modif date
-// size
-// top keywords
-// []parent link
-// []children link
-func (page *PageScore) FillPage() {
-	// sortedMap := make(map[int64]float64)
+	ioutil.WriteFile("search_output.json", file, os.ModePerm)
+
+	return pagesScores
 }
