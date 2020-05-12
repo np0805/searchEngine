@@ -6,22 +6,23 @@ We use golang as the programming language and BoltDB as the database.
 
 Install Go
 ```
-wget https://dl.google.com/go/go1.10.linux-amd64.tar.gz
-sudo tar -C /usr/local/ -xzf go1.10.linux-amd64.tar.gz
-echo "export PATH=\$PATH:/usr/local/go/bin" | sudo tee -a /etc/profile
-source /etc/profile
+$ wget https://dl.google.com/go/go1.10.linux-amd64.tar.gz
+$ sudo tar -C /usr/local/ -xzf go1.10.linux-amd64.tar.gz
+$ echo "export PATH=\$PATH:/usr/local/go/bin" | sudo tee -a /etc/profile
+$ source /etc/profile
 ```
 
 Download repository
 ```
-go get github.com/william-19/searchengine
+$ go get github.com/william-19/searchengine
 ```
 
 Download modules
 ```
-go get github.com/reiver/go-porterstemmer
-go get github.com/PuerkitoBio/goquery
-go get golang.org/x/net/html
+$ go get -u github.com/reiver/go-porterstemmer
+$ go get -u github.com/PuerkitoBio/goquery
+$ go get -u golang.org/x/net/html
+$ go get -u go.etcd.io/bbolt
 ```
 
 ## Running 
@@ -30,13 +31,13 @@ Navigate to the src folder
 
 Run the crawler and store in database
 ```
-go run main.go
+$ go run main.go
 ```
 To change the starting page, change the "baseURL" variable in main.go
 
 Run the website
 ```
-go run web.go
+$ go run web.go
 ```
 
 Navigate to your browser and open http://localhost:8000
