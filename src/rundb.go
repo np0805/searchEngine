@@ -11,13 +11,16 @@ import (
 func main() {
 	database.OpenAllDb()
 	fmt.Println(time.Now())
-	r := retrieval.RetrievalFunction("love compare automatic")
+	r := retrieval.RetrievalFunction("love biji automatic")
 	fmt.Println(time.Now())
 	for k, v := range r {
-		fmt.Println("key ", k, "value", v.GetTitle())
+		fmt.Println("key ", k, "value", v.GetURL())
+		break
 	}
 	fmt.Println("-------------")
 	fmt.Println(database.ExtractPageInfo(2))
+	id := database.GetPageId("https://www.cse.ust.hk/")
+	fmt.Println(database.GetLinkRank(id))
 	// database.PrintTest()
 	// fmt.Println(database.DocLength(2))
 	// fmt.Println("-------------")
